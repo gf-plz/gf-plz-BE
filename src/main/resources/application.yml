@@ -1,0 +1,42 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  # 1. H2 데이터베이스 설정
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  # 2. H2 콘솔 (웹에서 DB 확인)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # 3. JPA (DB 자동 생성)
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update  # 서버 켤 때마다 엔티티 보고 테이블 자동 생성/수정
+    show-sql: true      # 실행되는 SQL 보여주기
+    properties:
+      hibernate:
+        format_sql: true
+
+  # 4. 파일 업로드 설정 (음성 파일용)
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# 5. Groq API 키
+groq:
+  api-key: ${GROQ_API_KEY}    # .env에서 가져옴
+  url: "https://api.groq.com/openai/v1/chat/completions"
+  model: "llama3-8b-8192"
