@@ -40,18 +40,24 @@ public class GroqClientImpl implements GroqClient {
 
     @Override
     public String generateReply(String mode, String userText) {
+        return generateReply(mode, userText, null);
+    }
+
+    @Override
+    public String generateReply(String mode, String userText, List<GroqMessage> history) {
         if (userText == null || userText.isBlank()) {
             throw new GroqApiException("사용자 입력 텍스트가 비어있습니다.");
         }
 
-        // mode: "chat" → 채팅 스타일, "call" → 음성용 짧은 스타일
         String modePrompt = "mode: " + mode;
 
-        List<GroqMessage> messages = List.of(
-                new GroqMessage("system", BASE_SYSTEM_PROMPT),
-                new GroqMessage("system", modePrompt),
-                new GroqMessage("user", userText)
-        );
+        List<GroqMessage> messages = new java.util.ArrayList<>();
+        messages.add(new GroqMessage("system", BASE_SYSTEM_PROMPT));
+        messages.add(new GroqMessage("system", modePrompt));
+        if (history != null && !history.isEmpty()) {
+            messages.addAll(history);
+        }
+        messages.add(new GroqMessage("user", userText));
 
         GroqChatRequest request = new GroqChatRequest(
                 MODEL,
