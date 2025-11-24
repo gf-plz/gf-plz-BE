@@ -86,7 +86,7 @@ public class CallServiceImpl implements CallService {
         sessionRepository.save(session);
 
         // 6. 응답 반환
-        return new CallTextResponseDto(reply, session.getSessionId());
+        return new CallTextResponseDto(session.getSessionId(), reply);
     }
 
     /**

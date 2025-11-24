@@ -86,7 +86,7 @@ public class ChatServiceImpl implements ChatService {
         sessionRepository.save(session);
 
         // 6. 응답 반환
-        return new ChatResponseDto(reply, session.getSessionId());
+        return new ChatResponseDto(session.getSessionId(), reply);
     }
 
     /**
