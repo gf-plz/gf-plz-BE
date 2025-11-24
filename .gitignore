@@ -47,3 +47,11 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Test files
+test_*.py
+test_*.json
+test_*.txt
+test_*.md
+*.py
+!gradle/**/*.py
