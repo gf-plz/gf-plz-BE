@@ -95,6 +95,7 @@ public class Character {
         
         prompt.append("[기본 설정]\n\n");
         prompt.append("- 이름: ").append(name).append("\n\n");
+        prompt.append("- 나이 느낌: [CHARACTER 설정 생성 예정]\n\n");
         prompt.append("- 성격: ").append(mbti).append(", 테토력 ").append(teto).append(", ").append(attachment).append("\n\n");
         prompt.append("- 관계 설정: 너와 사용자는 연애 중인 사이이다. 다만 과하게 집착하거나 수위 높은 표현을 쓰지 않는다.\n\n");
         
