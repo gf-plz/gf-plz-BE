@@ -2,6 +2,10 @@ package com.aigf.gf_plz.global.exception;
 
 import com.aigf.gf_plz.domain.character.exception.CharacterNotFoundException;
 import com.aigf.gf_plz.global.groq.exception.GroqApiException;
+import com.aigf.gf_plz.global.tts.exception.TtsException;
+import com.aigf.gf_plz.global.whisper.exception.WhisperException;
+import com.aigf.gf_plz.global.tts.exception.TtsException;
+import com.aigf.gf_plz.global.whisper.exception.WhisperException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -93,6 +97,40 @@ public class GlobalExceptionHandler {
                 request.getDescription(false).replace("uri=", "")
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * WhisperException 예외 처리
+     */
+    @ExceptionHandler(WhisperException.class)
+    public ResponseEntity<ErrorResponse> handleWhisperException(
+            WhisperException ex,
+            WebRequest request
+    ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Whisper API Error",
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    /**
+     * TtsException 예외 처리
+     */
+    @ExceptionHandler(TtsException.class)
+    public ResponseEntity<ErrorResponse> handleTtsException(
+            TtsException ex,
+            WebRequest request
+    ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "TTS API Error",
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
     /**
