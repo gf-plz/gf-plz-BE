@@ -1,4 +1,25 @@
 package com.aigf.gf_plz.domain.character.dto;
 
-public class CharacterResponseDto {
-}
+import com.aigf.gf_plz.domain.character.entity.AttachmentType;
+import com.aigf.gf_plz.domain.character.entity.Gender;
+import com.aigf.gf_plz.domain.character.entity.Mbti;
+import com.aigf.gf_plz.domain.character.entity.VoiceType;
+
+import java.time.LocalDateTime;
+
+/**
+ * 캐릭터 응답 DTO
+ */
+public record CharacterResponseDto(
+        Long characterId,
+        Mbti mbti,
+        AttachmentType attachment,
+        Integer teto,
+        Gender gender,
+        String name,
+        String description,
+        String imageUrl,
+        VoiceType voiceType,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) {}
