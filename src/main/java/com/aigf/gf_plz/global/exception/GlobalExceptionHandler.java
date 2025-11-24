@@ -1,5 +1,6 @@
 package com.aigf.gf_plz.global.exception;
 
+import com.aigf.gf_plz.domain.character.exception.CharacterNotFoundException;
 import com.aigf.gf_plz.global.groq.exception.GroqApiException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -75,6 +76,23 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    /**
+     * 캐릭터를 찾을 수 없을 때 예외 처리
+     */
+    @ExceptionHandler(CharacterNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCharacterNotFoundException(
+            CharacterNotFoundException ex,
+            WebRequest request
+    ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Character Not Found",
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     /**
