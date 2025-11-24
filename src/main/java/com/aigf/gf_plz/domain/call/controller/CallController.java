@@ -1,10 +1,16 @@
 package com.aigf.gf_plz.domain.call.controller;
 
+import com.aigf.gf_plz.domain.call.dto.CallAudioRequestDto;
+import com.aigf.gf_plz.domain.call.dto.CallAudioResponseDto;
 import com.aigf.gf_plz.domain.call.dto.CallTextRequestDto;
 import com.aigf.gf_plz.domain.call.dto.CallTextResponseDto;
 import com.aigf.gf_plz.domain.call.service.CallService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 통화 컨트롤러
@@ -29,14 +35,42 @@ public class CallController {
      * @param request Whisper로 변환된 발화 텍스트
      * @return AI 여자친구의 답변 텍스트
      */
-    @PostMapping("/text")
+    @PostMapping(value = "/text", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
     public CallTextResponseDto callByText(@Valid @RequestBody CallTextRequestDto request) {
         return callService.replyToTranscript(request);
     }
 
-    // TODO: 2단계 - MultipartFile로 음성 파일을 받아서
-    // Groq Whisper → transcript 추출
-    // generateReply("call", transcript) 호출
-    // TTS 호출 후 음성 파일/스트림 반환
-    // /api/call/audio 엔드포인트 추가
+    /**
+     * 2단계: 음성 파일 기반 통화 엔드포인트
+     * 프론트에서 음성 파일을 보내면,
+     * Whisper(STT) → AI 답변 생성 → TTS 변환을 수행하여
+     * 음성 응답을 반환합니다.
+     *
+     * @param audioFile 사용자의 음성 파일 (MP3, WAV, M4A 등)
+     * @param characterId 캐릭터 ID
+     * @param sessionId 세션 ID (선택사항)
+     * @return AI 여자친구의 음성 응답 (MP3 형식)
+     */
+    @PostMapping("/audio")
+    public ResponseEntity<byte[]> callByAudio(
+            @RequestParam("audio") MultipartFile audioFile,
+            @RequestParam("characterId") Long characterId,
+            @RequestParam(value = "sessionId", required = false) Long sessionId
+    ) {
+        CallAudioRequestDto request = new CallAudioRequestDto(
+                characterId,
+                sessionId != null ? java.util.Optional.of(sessionId) : java.util.Optional.empty()
+        );
+
+        CallAudioResponseDto response = callService.replyToAudio(audioFile, request);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("audio/mpeg"));
+        headers.setContentLength(response.audioData().length);
+        headers.setContentDispositionFormData("attachment", "response.mp3");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(response.audioData());
+    }
 }
