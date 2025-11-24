@@ -53,6 +53,9 @@ public class GroqClientImpl implements GroqClient {
         if (userText == null || userText.isBlank()) {
             throw new GroqApiException("사용자 입력 텍스트가 비어있습니다.");
         }
+        if (systemPrompt == null || systemPrompt.isBlank()) {
+            throw new GroqApiException("시스템 프롬프트가 비어있습니다.");
+        }
 
         String modePrompt = "mode: " + mode;
 

@@ -55,9 +55,12 @@ public class CallServiceImpl implements CallService {
                 SessionType.CALL
         );
 
-        // 2. 히스토리 조회 및 변환
-        List<Message> messages = messageRepository
-                .findTop30BySessionIdOrderByCreatedAtDesc(session.getSessionId());
+        // 2. 히스토리 조회 및 변환 (최근 30개로 제한)
+        List<Message> allMessages = messageRepository
+                .findBySessionIdOrderByCreatedAtDesc(session.getSessionId());
+        List<Message> messages = allMessages.stream()
+                .limit(30)
+                .collect(Collectors.toList());
         List<GroqMessage> history = convertToGroqMessages(messages);
 
         // 3. 사용자 메시지 저장 (TRANSCRIPT 타입)

@@ -1,0 +1,49 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  # 1. H2 데이터베이스 설정 (프로덕션용 - 절대 경로 사용)
+  datasource:
+    # EC2 서버의 /home/ec2-user/data 또는 /var/lib/gfplz 같은 경로에 저장
+    # 또는 환경변수로 경로 지정 가능: ${DB_PATH:/home/ec2-user/data/gfplz}
+    url: jdbc:h2:file:${DB_PATH:/home/ec2-user/data/gfplz};MODE=MySQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;NON_KEYWORDS=USER,VALUE;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+  
+  # 2. H2 콘솔 (프로덕션에서는 보안상 비활성화 권장)
+  h2:
+    console:
+      enabled: false
+      path: /h2-console
+
+  # 3. JPA (DB 자동 생성)
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false  # 프로덕션에서는 SQL 로그 비활성화
+    properties:
+      hibernate:
+        format_sql: false
+        connection:
+          characterEncoding: UTF-8
+        hbm2ddl:
+          charset: UTF-8
+
+  # 4. 파일 업로드 설정 (음성 파일용)
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# 5. Groq API 키
+groq:
+  api-key: ${GROQ_API_KEY}
+  url: "https://api.groq.com/openai/v1/chat/completions"
+  model: "llama3-8b-8192"
+

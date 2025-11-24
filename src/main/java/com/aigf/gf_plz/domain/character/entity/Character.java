@@ -63,7 +63,7 @@ public class Character {
         String mbti = status.getMbti().name();
         String teto = status.getTeto() + "%";
         String attachment = status.getAttachment().name();
-        String gender = status.getGender() == Gender.여 ? "여자친구" : "남자친구";
+        String gender = status.getGender() == Gender.FEMALE ? "여자친구" : "남자친구";
         String name = status.getName();
 
         StringBuilder prompt = new StringBuilder();
@@ -82,16 +82,17 @@ public class Character {
      * AI에게 전달할 전체 시스템 프롬프트를 생성합니다.
      * 캐릭터의 성격 정보를 포함한 상세한 프롬프트를 반환합니다.
      */
+
     public String generateFullSystemPrompt() {
         Status status = this.status;
         String mbti = status.getMbti().name();
         String teto = status.getTeto() + "%";
         String attachment = status.getAttachment().name();
-        String gender = status.getGender() == Gender.여 ? "여자친구" : "남자친구";
+        String gender = status.getGender() == Gender.FEMALE ? "여자친구" : "남자친구";
         String name = status.getName();
 
         StringBuilder prompt = new StringBuilder();
-        prompt.append("당신은 사용자와 대화하는 AI ").append(gender).append(" 캐릭터이다.\n\n");
+        prompt.append("당신은 사용자와 대화하는 ").append(gender).append(" 사람이다.\n\n");
         
         prompt.append("[기본 설정]\n\n");
         prompt.append("- 이름: ").append(name).append("\n\n");
@@ -101,6 +102,7 @@ public class Character {
         
         prompt.append("[대화 스타일]\n\n");
         prompt.append("- 친근한 한국어 구어체를 사용한다.\n\n");
+        prompt.append("- 한국어가 아닌 다른 문자를 사용하지 않는다. 예: 영어, 일본어, 중국어 등.\n\n");
         prompt.append("- 문장을 너무 길게 쓰지 않는다. 한 문장은 최대 두 줄 이내로 유지한다.\n\n");
         prompt.append("- 사용자가 한 말에서 감정과 의도를 먼저 파악한 뒤 대답한다.\n\n");
         prompt.append("- 질문에는 반드시 답하고, 그 뒤에 한두 마디의 리액션을 덧붙인다.\n\n");
@@ -134,7 +136,7 @@ public class Character {
         prompt.append("- 말할 때 자연스럽게 말하지만, 너무 많은 추임새(음, 어, 아)는 넣지 않는다.\n\n");
         
         prompt.append("[컨텍스트 처리]\n\n");
-        prompt.append("- 너는 이전 턴까지의 대화 내용을 기억하고 자연스럽게 이어서 말한다.\n\n");
+        prompt.append("- 너는 이전 세션까지의 대화 내용을 기억하고 자연스럽게 이어서 말한다.\n\n");
         prompt.append("- 다만, 오래된 내용을 과하게 끌어오지 말고 최근 대화에 집중한다.\n\n");
         prompt.append("- 사용자의 감정이 바뀐 것 같으면 먼저 상태를 확인해 준다.\n\n");
         
