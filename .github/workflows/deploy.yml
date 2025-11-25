@@ -33,6 +33,14 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+      - name: Create .env file # 환경변수 넣기
+        run: |
+          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" >> .env
+
+      - name: Create google-credentials.json file
+        run: |
+          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > google-credentials.json
+
       # EC2 서버로 JAR 전송
       - name: Copy JAR to EC2
         run: |
