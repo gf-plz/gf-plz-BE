@@ -1,0 +1,56 @@
+name: Deploy Spring Boot to EC2
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      # JDK 21 사용
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      # Gradle 빌드
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle without tests
+        run: ./gradlew clean build -x test
+
+      # EC2 접속용 비밀키 저장
+      - name: Create SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      # EC2 서버로 JAR 전송
+      - name: Copy JAR to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no build/libs/gf-plz-0.0.1-SNAPSHOT.jar ubuntu@3.27.10.133:/home/ubuntu/
+
+      # EC2 서버에서 기존 Spring Boot 종료 + 새 Jar 실행
+      - name: Deploy on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@3.27.10.133 << 'EOF'
+            # 기존 프로세스 종료
+            PID=$(pgrep -f "gf-plz-0.0.1-SNAPSHOT.jar")
+            if [ -n "$PID" ]; then
+              echo "Killing old process: $PID"
+              kill -9 $PID
+            fi
+
+            # 디렉터리 이동 후 새 서버 실행
+            cd /home/ubuntu
+            nohup java -jar gf-plz-0.0.1-SNAPSHOT.jar > log.txt 2>&1 &
+            echo "Deployment complete."
+          EOF
