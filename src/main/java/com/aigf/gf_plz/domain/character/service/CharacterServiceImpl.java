@@ -2,13 +2,20 @@ package com.aigf.gf_plz.domain.character.service;
 
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
+import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
 import com.aigf.gf_plz.domain.character.entity.Character;
 import com.aigf.gf_plz.domain.character.entity.Status;
 import com.aigf.gf_plz.domain.character.exception.CharacterNotFoundException;
 import com.aigf.gf_plz.domain.character.repository.CharacterRepository;
 import com.aigf.gf_plz.domain.character.repository.StatusRepository;
+import com.aigf.gf_plz.domain.session.entity.Session;
+import com.aigf.gf_plz.domain.session.entity.SessionType;
+import com.aigf.gf_plz.domain.session.repository.SessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * 캐릭터 서비스 구현체
@@ -18,13 +25,16 @@ public class CharacterServiceImpl implements CharacterService {
 
     private final CharacterRepository characterRepository;
     private final StatusRepository statusRepository;
+    private final SessionRepository sessionRepository;
 
     public CharacterServiceImpl(
             CharacterRepository characterRepository,
-            StatusRepository statusRepository
+            StatusRepository statusRepository,
+            SessionRepository sessionRepository
     ) {
         this.characterRepository = characterRepository;
         this.statusRepository = statusRepository;
+        this.sessionRepository = sessionRepository;
     }
 
     @Override
@@ -62,6 +72,55 @@ public class CharacterServiceImpl implements CharacterService {
         return toResponseDto(character);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public CharacterResponseDto getRecentCharacter() {
+        // 최근 활성 세션 조회
+        List<Session> recentSessions = sessionRepository.findRecentActiveSessions();
+        
+        // 가장 최근 세션이 없으면 null 반환
+        if (recentSessions.isEmpty()) {
+            return null;
+        }
+        
+        // 가장 최근 세션의 캐릭터 반환
+        Session mostRecentSession = recentSessions.get(0);
+        return toResponseDto(mostRecentSession.getCharacter());
+    }
+
+    @Override
+    @Transactional
+    public CharacterSelectResponseDto selectCharacter(Long characterId) {
+        // 1. 캐릭터 조회
+        Character character = characterRepository.findById(characterId)
+                .orElseThrow(() -> new CharacterNotFoundException(characterId));
+        
+        // 2. 기존 활성 세션이 있는지 확인 (CHAT 타입 우선)
+        Optional<Session> existingChatSession = sessionRepository
+                .findByCharacterIdAndSessionTypeAndIsActiveTrue(characterId, SessionType.CHAT);
+        
+        Session session;
+        if (existingChatSession.isPresent()) {
+            // 기존 세션이 있으면 활성화 상태 유지
+            session = existingChatSession.get();
+        } else {
+            // 기존 세션이 없으면 새 세션 생성 (CHAT 타입)
+            session = Session.builder()
+                    .character(character)
+                    .sessionType(SessionType.CHAT)
+                    .build();
+            session = sessionRepository.save(session);
+        }
+        
+        // 3. 응답 DTO 생성
+        CharacterResponseDto characterDto = toResponseDto(character);
+        return new CharacterSelectResponseDto(
+                characterId,
+                session.getSessionId(),
+                characterDto
+        );
+    }
+
     /**
      * Character 엔티티를 CharacterResponseDto로 변환합니다.
      */
@@ -82,6 +141,7 @@ public class CharacterServiceImpl implements CharacterService {
         );
     }
 }
+
 
 
 
