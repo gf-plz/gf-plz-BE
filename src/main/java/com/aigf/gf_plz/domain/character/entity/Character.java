@@ -5,10 +5,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
 
 /**
  * 캐릭터 엔티티
@@ -55,14 +51,6 @@ public class Character {
 
     @Column(name = "테토력", nullable = false)
     private Integer teto; // 0~100
-
-    @CreationTimestamp
-    @Column(name = "생성 날짜", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "변경 날짜", nullable = false)
-    private LocalDateTime updatedAt;
 
     @Builder
     public Character(
