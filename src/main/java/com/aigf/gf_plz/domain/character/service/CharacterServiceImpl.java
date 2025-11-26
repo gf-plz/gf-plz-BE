@@ -3,6 +3,7 @@ package com.aigf.gf_plz.domain.character.service;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.entity.Character;
+import com.aigf.gf_plz.domain.character.entity.Relation;
 import com.aigf.gf_plz.domain.character.entity.Status;
 import com.aigf.gf_plz.domain.character.exception.CharacterNotFoundException;
 import com.aigf.gf_plz.domain.character.repository.CharacterRepository;
@@ -30,22 +31,24 @@ public class CharacterServiceImpl implements CharacterService {
     @Override
     @Transactional
     public CharacterResponseDto createCharacter(CharacterCreateRequestDto request) {
-        // 1. Status 생성
+        // 1. Status 생성 (ERD에 따른 relation, start_day, end_day, like 필드)
         Status status = Status.builder()
-                .mbti(request.mbti())
-                .attachment(request.attachment())
-                .teto(request.teto())
-                .gender(request.gender())
-                .name(request.name())
+                .relation(Relation.yet) // 초기 상태는 아직 만나지 않음
+                .like(0) // 초기 애정도는 0
                 .build();
         Status savedStatus = statusRepository.save(status);
 
-        // 2. Character 생성
+        // 2. Character 생성 (ERD에 따른 MBTI, 성별, 이름, 애착타입, 테토력 포함)
         Character character = Character.builder()
                 .status(savedStatus)
                 .description(request.description())
                 .imageUrl(request.imageUrl())
                 .voiceType(request.voiceType())
+                .mbti(request.mbti())
+                .gender(request.gender())
+                .name(request.name())
+                .attachment(request.attachment())
+                .teto(request.teto())
                 .build();
         Character savedCharacter = characterRepository.save(character);
 
@@ -66,14 +69,13 @@ public class CharacterServiceImpl implements CharacterService {
      * Character 엔티티를 CharacterResponseDto로 변환합니다.
      */
     private CharacterResponseDto toResponseDto(Character character) {
-        Status status = character.getStatus();
         return new CharacterResponseDto(
                 character.getCharacterId(),
-                status.getMbti(),
-                status.getAttachment(),
-                status.getTeto(),
-                status.getGender(),
-                status.getName(),
+                character.getMbti(),
+                character.getAttachment(),
+                character.getTeto(),
+                character.getGender(),
+                character.getName(),
                 character.getDescription(),
                 character.getImageUrl(),
                 character.getVoiceType(),

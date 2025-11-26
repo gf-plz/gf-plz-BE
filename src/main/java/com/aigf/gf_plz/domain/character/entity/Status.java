@@ -6,9 +6,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 캐릭터 상태 정보 엔티티
- * MBTI, 애착유형, 테토력, 성별, 이름을 포함
+ * ERD에 따른 관계 상태, 만난 날짜, 헤어지는 날짜, 애정도를 포함
  */
 @Entity
 @Table(name = "status")
@@ -22,30 +24,38 @@ public class Status {
     private Long statusId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "MBTI", nullable = false)
-    private Mbti mbti;
+    @Column(name = "관계", nullable = false)
+    private Relation relation;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "애착타입", nullable = false)
-    private AttachmentType attachment;
+    @Column(name = "만난 날짜")
+    private LocalDateTime startDay;
 
-    @Column(name = "테토력", nullable = false)
-    private Integer teto; // 0~100
+    @Column(name = "헤어지는 날짜")
+    private LocalDateTime endDay;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "성별", nullable = false)
-    private Gender gender;
-
-    @Column(name = "이름", nullable = false, length = 50)
-    private String name;
+    @Column(name = "애정도")
+    private Integer like; // 애정도 점수
 
     @Builder
-    public Status(Mbti mbti, AttachmentType attachment, Integer teto, Gender gender, String name) {
-        this.mbti = mbti;
-        this.attachment = attachment;
-        this.teto = teto;
-        this.gender = gender;
-        this.name = name;
+    public Status(Relation relation, LocalDateTime startDay, LocalDateTime endDay, Integer like) {
+        this.relation = relation;
+        this.startDay = startDay;
+        this.endDay = endDay;
+        this.like = like;
+    }
+
+    /**
+     * 애정도를 업데이트합니다.
+     */
+    public void updateLike(Integer newLike) {
+        this.like = newLike;
+    }
+
+    /**
+     * 관계 상태를 업데이트합니다.
+     */
+    public void updateRelation(Relation relation) {
+        this.relation = relation;
     }
 }
 

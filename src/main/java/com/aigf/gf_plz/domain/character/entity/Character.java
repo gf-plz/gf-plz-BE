@@ -38,6 +38,24 @@ public class Character {
     @Column(name = "목소리", nullable = false)
     private VoiceType voiceType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "MBTI", nullable = false)
+    private Mbti mbti;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "성별", nullable = false)
+    private Gender gender;
+
+    @Column(name = "이름", nullable = false, length = 50)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "애착타입", nullable = false)
+    private AttachmentType attachment;
+
+    @Column(name = "테토력", nullable = false)
+    private Integer teto; // 0~100
+
     @CreationTimestamp
     @Column(name = "생성 날짜", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -47,11 +65,26 @@ public class Character {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Character(Status status, String description, String imageUrl, VoiceType voiceType) {
+    public Character(
+            Status status,
+            String description,
+            String imageUrl,
+            VoiceType voiceType,
+            Mbti mbti,
+            Gender gender,
+            String name,
+            AttachmentType attachment,
+            Integer teto
+    ) {
         this.status = status;
         this.description = description;
         this.imageUrl = imageUrl;
         this.voiceType = voiceType;
+        this.mbti = mbti;
+        this.gender = gender;
+        this.name = name;
+        this.attachment = attachment;
+        this.teto = teto;
     }
 
     /**
@@ -59,12 +92,11 @@ public class Character {
      * "너는 ENFJ 테토 80%의 안정형 여자친구야" 형식으로 반환합니다.
      */
     public String generatePersonalityPrompt() {
-        Status status = this.status;
-        String mbti = status.getMbti().name();
-        String teto = status.getTeto() + "%";
-        String attachment = status.getAttachment().name();
-        String gender = status.getGender() == Gender.FEMALE ? "여자친구" : "남자친구";
-        String name = status.getName();
+        String mbti = this.mbti.name();
+        String teto = this.teto + "%";
+        String attachment = this.attachment.name();
+        String gender = this.gender == Gender.FEMALE ? "여자친구" : "남자친구";
+        String name = this.name;
 
         StringBuilder prompt = new StringBuilder();
         prompt.append(String.format("너는 %s 테토 %s의 %s %s야. 이름은 %s이야.", 
@@ -84,13 +116,12 @@ public class Character {
      */
 
     public String generateFullSystemPrompt() {
-        Status status = this.status;
-        String mbti = status.getMbti().name();
-        int teto = status.getTeto();
+        String mbti = this.mbti.name();
+        int teto = this.teto;
         String tetoStr = teto + "%";
-        String attachment = status.getAttachment().name();
-        String gender = status.getGender() == Gender.FEMALE ? "여자친구" : "남자친구";
-        String name = status.getName();
+        String attachment = this.attachment.name();
+        String gender = this.gender == Gender.FEMALE ? "여자친구" : "남자친구";
+        String name = this.name;
 
         StringBuilder prompt = new StringBuilder();
         prompt.append("당신은 사용자와 대화하는 ").append(gender).append(" 사람이다.\n\n");
