@@ -45,4 +45,3 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
            "ORDER BY s.lastMessageAt DESC")
     List<Session> findRecentActiveSessions();
 }
-
