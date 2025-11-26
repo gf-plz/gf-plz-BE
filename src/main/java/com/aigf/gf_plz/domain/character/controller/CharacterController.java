@@ -3,10 +3,13 @@ package com.aigf.gf_plz.domain.character.controller;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
+import com.aigf.gf_plz.domain.character.entity.Relation;
 import com.aigf.gf_plz.domain.character.service.CharacterService;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 캐릭터 컨트롤러
@@ -20,6 +23,17 @@ public class CharacterController {
 
     public CharacterController(CharacterService characterService) {
         this.characterService = characterService;
+    }
+
+    /**
+     * 캐릭터 목록을 조회합니다.
+     *
+     * @param relation 관계 상태 필터 (선택사항)
+     * @return 캐릭터 목록
+     */
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public List<CharacterResponseDto> getCharacters(@RequestParam(value = "relation", required = false) Relation relation) {
+        return characterService.getCharacters(relation);
     }
 
     /**
@@ -63,5 +77,16 @@ public class CharacterController {
     @PostMapping(value = "/{characterId}/select", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
     public CharacterSelectResponseDto selectCharacter(@PathVariable Long characterId) {
         return characterService.selectCharacter(characterId);
+    }
+
+    /**
+     * 여자친구 관계를 3일 연장합니다.
+     *
+     * @param characterId 캐릭터 ID
+     * @return 업데이트된 캐릭터 정보
+     */
+    @PostMapping(value = "/{characterId}/extend", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public CharacterResponseDto extendRelationship(@PathVariable Long characterId) {
+        return characterService.extendRelationship(characterId);
     }
 }

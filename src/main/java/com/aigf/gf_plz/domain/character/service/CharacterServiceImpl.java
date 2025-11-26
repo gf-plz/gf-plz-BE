@@ -3,6 +3,7 @@ package com.aigf.gf_plz.domain.character.service;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
+import com.aigf.gf_plz.domain.character.dto.StatusResponseDto;
 import com.aigf.gf_plz.domain.character.entity.Character;
 import com.aigf.gf_plz.domain.character.entity.Relation;
 import com.aigf.gf_plz.domain.character.entity.Status;
@@ -15,6 +16,7 @@ import com.aigf.gf_plz.domain.session.repository.SessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +46,8 @@ public class CharacterServiceImpl implements CharacterService {
         // 1. Status 생성 (ERD에 따른 relation, start_day, end_day, like 필드)
         Status status = Status.builder()
                 .relation(Relation.yet) // 초기 상태는 아직 만나지 않음
+                .startDay(null) // 캐릭터 선택 시 설정됨
+                .endDay(null) // 캐릭터 선택 시 설정됨
                 .like(0) // 초기 애정도는 0
                 .build();
         Status savedStatus = statusRepository.save(status);
@@ -72,6 +76,9 @@ public class CharacterServiceImpl implements CharacterService {
         Character character = characterRepository.findById(characterId)
                 .orElseThrow(() -> new CharacterNotFoundException(characterId));
         
+        // Status 만료 체크
+        checkAndUpdateExpiredStatus(character.getStatus());
+        
         return toResponseDto(character);
     }
 
@@ -88,7 +95,12 @@ public class CharacterServiceImpl implements CharacterService {
         
         // 가장 최근 세션의 캐릭터 반환
         Session mostRecentSession = recentSessions.get(0);
-        return toResponseDto(mostRecentSession.getCharacter());
+        Character character = mostRecentSession.getCharacter();
+        
+        // Status 만료 체크
+        checkAndUpdateExpiredStatus(character.getStatus());
+        
+        return toResponseDto(character);
     }
 
     @Override
@@ -98,7 +110,18 @@ public class CharacterServiceImpl implements CharacterService {
         Character character = characterRepository.findById(characterId)
                 .orElseThrow(() -> new CharacterNotFoundException(characterId));
         
-        // 2. 기존 활성 세션이 있는지 확인 (CHAT 타입 우선)
+        // 2. Status 만료 체크 및 업데이트
+        Status status = character.getStatus();
+        checkAndUpdateExpiredStatus(status); // 만료 체크 먼저
+        
+        // 3. 캐릭터 선택 시 Status를 now로 변경하고 날짜 설정
+        LocalDateTime now = LocalDateTime.now();
+        status.updateRelation(Relation.now);
+        status.updateStartDay(now);
+        status.updateEndDay(now.plusDays(3));
+        statusRepository.save(status);
+        
+        // 4. 기존 활성 세션이 있는지 확인 (CHAT 타입 우선)
         Optional<Session> existingChatSession = sessionRepository
                 .findByCharacterIdAndSessionTypeAndIsActiveTrue(characterId, SessionType.CHAT);
         
@@ -115,7 +138,7 @@ public class CharacterServiceImpl implements CharacterService {
             session = sessionRepository.save(session);
         }
         
-        // 3. 응답 DTO 생성
+        // 5. 응답 DTO 생성
         CharacterResponseDto characterDto = toResponseDto(character);
         return new CharacterSelectResponseDto(
                 characterId,
@@ -125,9 +148,61 @@ public class CharacterServiceImpl implements CharacterService {
     }
 
     /**
+     * Status의 만료 여부를 체크하고, 만료되었으면 ex로 변경합니다.
+     */
+    @Transactional
+    private void checkAndUpdateExpiredStatus(Status status) {
+        if (status.getEndDay() != null && 
+            status.getEndDay().isBefore(LocalDateTime.now()) && 
+            status.getRelation() == Relation.now) {
+            status.updateRelation(Relation.ex);
+            statusRepository.save(status);
+        }
+    }
+
+    @Override
+    @Transactional
+    public CharacterResponseDto extendRelationship(Long characterId) {
+        // 1. 캐릭터 조회
+        Character character = characterRepository.findById(characterId)
+                .orElseThrow(() -> new CharacterNotFoundException(characterId));
+        
+        // 2. Status 확인 및 만료 체크
+        Status status = character.getStatus();
+        checkAndUpdateExpiredStatus(status);
+        
+        // 3. 현재 연애 중인 경우에만 연장 가능
+        if (status.getRelation() != Relation.now) {
+            throw new IllegalStateException("현재 연애 중인 상태에서만 관계를 연장할 수 있습니다.");
+        }
+        
+        // 4. endDay가 null이면 연장 불가
+        if (status.getEndDay() == null) {
+            throw new IllegalStateException("헤어지는 날짜가 설정되지 않아 연장할 수 없습니다.");
+        }
+        
+        // 5. 헤어지는 날짜를 3일 연장
+        LocalDateTime newEndDay = status.getEndDay().plusDays(3);
+        status.updateEndDay(newEndDay);
+        statusRepository.save(status);
+        
+        // 6. 응답 DTO 생성
+        return toResponseDto(character);
+    }
+
+    /**
      * Character 엔티티를 CharacterResponseDto로 변환합니다.
      */
     private CharacterResponseDto toResponseDto(Character character) {
+        Status status = character.getStatus();
+        StatusResponseDto statusDto = new StatusResponseDto(
+                status.getStatusId(),
+                status.getRelation(),
+                status.getStartDay(),
+                status.getEndDay(),
+                status.getLike()
+        );
+        
         return new CharacterResponseDto(
                 character.getCharacterId(),
                 character.getMbti(),
@@ -137,8 +212,31 @@ public class CharacterServiceImpl implements CharacterService {
                 character.getName(),
                 character.getDescription(),
                 character.getImageUrl(),
-                character.getVoiceType()
+                character.getVoiceType(),
+                statusDto
         );
+    }
+
+    @Override
+    @Transactional
+    public List<CharacterResponseDto> getCharacters(Relation relation) {
+        List<Character> characters;
+        
+        if (relation == null) {
+            // relation이 null이면 전체 조회
+            characters = characterRepository.findAll();
+        } else {
+            // relation으로 필터링
+            characters = characterRepository.findByStatus_Relation(relation);
+        }
+        
+        // 각 캐릭터의 Status 만료 체크 및 DTO 변환
+        return characters.stream()
+                .map(character -> {
+                    checkAndUpdateExpiredStatus(character.getStatus());
+                    return toResponseDto(character);
+                })
+                .toList();
     }
 }
 

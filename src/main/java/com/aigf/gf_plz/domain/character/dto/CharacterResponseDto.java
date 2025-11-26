@@ -17,5 +17,6 @@ public record CharacterResponseDto(
         String name,
         String description,
         String imageUrl,
-        VoiceType voiceType
+        VoiceType voiceType,
+        StatusResponseDto status
 ) {}

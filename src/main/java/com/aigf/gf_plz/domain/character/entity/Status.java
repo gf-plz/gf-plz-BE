@@ -57,5 +57,27 @@ public class Status {
     public void updateRelation(Relation relation) {
         this.relation = relation;
     }
+
+    /**
+     * 만난 날짜를 업데이트합니다.
+     */
+    public void updateStartDay(LocalDateTime startDay) {
+        this.startDay = startDay;
+    }
+
+    /**
+     * 헤어지는 날짜를 업데이트합니다.
+     */
+    public void updateEndDay(LocalDateTime endDay) {
+        this.endDay = endDay;
+    }
+
+    /**
+     * 만난 날짜와 헤어지는 날짜를 함께 업데이트합니다.
+     */
+    public void updateDates(LocalDateTime startDay, LocalDateTime endDay) {
+        this.startDay = startDay;
+        this.endDay = endDay;
+    }
 }
 

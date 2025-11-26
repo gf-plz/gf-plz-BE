@@ -20,7 +20,7 @@ public class Character {
     @Column(name = "캐릭터ID")
     private Long characterId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "상태ID", nullable = false)
     private Status status;
 
