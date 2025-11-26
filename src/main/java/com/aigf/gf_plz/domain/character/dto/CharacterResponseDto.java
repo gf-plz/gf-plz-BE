@@ -5,8 +5,6 @@ import com.aigf.gf_plz.domain.character.entity.Gender;
 import com.aigf.gf_plz.domain.character.entity.Mbti;
 import com.aigf.gf_plz.domain.character.entity.VoiceType;
 
-import java.time.LocalDateTime;
-
 /**
  * 캐릭터 응답 DTO
  */
@@ -20,6 +18,5 @@ public record CharacterResponseDto(
         String description,
         String imageUrl,
         VoiceType voiceType,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        StatusResponseDto status
 ) {}

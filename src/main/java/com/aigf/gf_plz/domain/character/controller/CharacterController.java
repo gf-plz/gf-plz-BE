@@ -3,15 +3,17 @@ package com.aigf.gf_plz.domain.character.controller;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
+import com.aigf.gf_plz.domain.character.entity.Relation;
 import com.aigf.gf_plz.domain.character.service.CharacterService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 캐릭터 컨트롤러
+ * 캐릭터 생성, 조회, 선택 관련 API를 제공합니다.
  */
 @RestController
 @RequestMapping("/api/characters")
@@ -24,57 +26,67 @@ public class CharacterController {
     }
 
     /**
+     * 캐릭터 목록을 조회합니다.
+     *
+     * @param relation 관계 상태 필터 (선택사항)
+     * @return 캐릭터 목록
+     */
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public List<CharacterResponseDto> getCharacters(@RequestParam(value = "relation", required = false) Relation relation) {
+        return characterService.getCharacters(relation);
+    }
+
+    /**
      * 새로운 캐릭터를 생성합니다.
-     * 
+     *
      * @param request 캐릭터 생성 요청
      * @return 생성된 캐릭터 정보
      */
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
-    public ResponseEntity<CharacterResponseDto> createCharacter(
-            @Valid @RequestBody CharacterCreateRequestDto request
-    ) {
-        CharacterResponseDto response = characterService.createCharacter(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public CharacterResponseDto createCharacter(@Valid @RequestBody CharacterCreateRequestDto request) {
+        return characterService.createCharacter(request);
     }
 
     /**
      * 캐릭터 ID로 캐릭터를 조회합니다.
-     * 
+     *
      * @param characterId 캐릭터 ID
      * @return 캐릭터 정보
      */
     @GetMapping(value = "/{characterId}", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
-    public ResponseEntity<CharacterResponseDto> getCharacter(@PathVariable Long characterId) {
-        CharacterResponseDto response = characterService.getCharacter(characterId);
-        return ResponseEntity.ok(response);
+    public CharacterResponseDto getCharacter(@PathVariable Long characterId) {
+        return characterService.getCharacter(characterId);
     }
 
     /**
-     * 최근 선택한 캐릭터를 조회합니다.
-     * 가장 최근에 대화한 활성 세션의 캐릭터를 반환합니다.
-     * 
-     * @return 최근 선택한 캐릭터 (없으면 404)
+     * 가장 최근에 선택한 캐릭터를 조회합니다.
+     *
+     * @return 최근 캐릭터 정보, 없으면 null
      */
     @GetMapping(value = "/recent", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
-    public ResponseEntity<CharacterResponseDto> getRecentCharacter() {
-        CharacterResponseDto response = characterService.getRecentCharacter();
-        if (response == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(response);
+    public CharacterResponseDto getRecentCharacter() {
+        return characterService.getRecentCharacter();
     }
 
     /**
      * 캐릭터를 선택하고 세션을 생성하거나 활성화합니다.
-     * 
+     *
      * @param characterId 캐릭터 ID
-     * @return 캐릭터 선택 결과 (캐릭터 정보 + 세션 ID)
+     * @return 캐릭터 선택 응답 (캐릭터 정보 + 세션 ID)
      */
-    @GetMapping(value = "/select", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
-    public ResponseEntity<CharacterSelectResponseDto> selectCharacter(
-            @RequestParam("characterId") Long characterId
-    ) {
-        CharacterSelectResponseDto response = characterService.selectCharacter(characterId);
-        return ResponseEntity.ok(response);
+    @PostMapping(value = "/{characterId}/select", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public CharacterSelectResponseDto selectCharacter(@PathVariable Long characterId) {
+        return characterService.selectCharacter(characterId);
+    }
+
+    /**
+     * 여자친구 관계를 3일 연장합니다.
+     *
+     * @param characterId 캐릭터 ID
+     * @return 업데이트된 캐릭터 정보
+     */
+    @PostMapping(value = "/{characterId}/extend", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public CharacterResponseDto extendRelationship(@PathVariable Long characterId) {
+        return characterService.extendRelationship(characterId);
     }
 }

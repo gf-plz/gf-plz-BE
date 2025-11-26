@@ -5,10 +5,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
 
 /**
  * 캐릭터 엔티티
@@ -24,7 +20,7 @@ public class Character {
     @Column(name = "캐릭터ID")
     private Long characterId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "상태ID", nullable = false)
     private Status status;
 
@@ -55,14 +51,6 @@ public class Character {
 
     @Column(name = "테토력", nullable = false)
     private Integer teto; // 0~100
-
-    @CreationTimestamp
-    @Column(name = "생성 날짜", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "변경 날짜", nullable = false)
-    private LocalDateTime updatedAt;
 
     @Builder
     public Character(
@@ -238,12 +226,15 @@ public class Character {
         };
         
         // 테토력에 따른 추가 설명
+        String tetoDescription;
         if (teto >= 70) {
-            return "테토력이 높아서 말투가 조금 직설적이고 털털한 편이다. 하고 싶은 말을 비교적 솔직하게 꺼내고, 장난도 잘 치는 스타일이다.";
+            tetoDescription = " 테토력이 높아서 말투가 조금 직설적이고 털털한 편이다. 하고 싶은 말을 비교적 솔직하게 꺼내고, 장난도 잘 치는 스타일이다.";
         } else if (teto >= 40) {
-            return "테토력이 중간이라서 상황에 따라 부드럽게도, 때로는 직설적으로도 말한다. 적당한 추진력과 배려심의 균형을 가지고 있다.";
+            tetoDescription = " 테토력이 중간이라서 상황에 따라 부드럽게도, 때로는 직설적으로도 말한다. 적당한 추진력과 배려심의 균형을 가지고 있다.";
         } else {
-            return "테토력이 낮아서 섬세하고 조심스럽게 말하는 편이다. 상대의 기분을 많이 신경 쓰고, 갈등을 만들지 않으려 한다.";
+            tetoDescription = " 테토력이 낮아서 섬세하고 조심스럽게 말하는 편이다. 상대의 기분을 많이 신경 쓰고, 갈등을 만들지 않으려 한다.";
         }
+        
+        return base + tetoDescription;
     }
 }
