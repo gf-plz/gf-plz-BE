@@ -137,9 +137,7 @@ public class CharacterServiceImpl implements CharacterService {
                 character.getName(),
                 character.getDescription(),
                 character.getImageUrl(),
-                character.getVoiceType(),
-                character.getCreatedAt(),
-                character.getUpdatedAt()
+                character.getVoiceType()
         );
     }
 }
