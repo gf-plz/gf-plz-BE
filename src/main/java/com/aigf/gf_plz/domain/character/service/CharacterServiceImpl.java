@@ -71,8 +71,8 @@ public class CharacterServiceImpl implements CharacterService {
                 .build();
         Character savedCharacter = characterRepository.save(character);
 
-        // 3. 응답 DTO 생성
-        return toResponseDto(savedCharacter);
+        // 3. 응답 DTO 생성 (저장된 Status를 직접 사용)
+        return toResponseDto(savedCharacter, savedStatus);
     }
 
     @Override
@@ -200,6 +200,14 @@ public class CharacterServiceImpl implements CharacterService {
      */
     private CharacterResponseDto toResponseDto(Character character) {
         Status status = character.getStatus();
+        return toResponseDto(character, status);
+    }
+
+    /**
+     * Character 엔티티와 Status를 CharacterResponseDto로 변환합니다.
+     * Status를 직접 전달하여 LAZY 로딩 문제를 방지합니다.
+     */
+    private CharacterResponseDto toResponseDto(Character character, Status status) {
         StatusResponseDto statusDto = new StatusResponseDto(
                 status.getStatusId(),
                 status.getRelation(),
