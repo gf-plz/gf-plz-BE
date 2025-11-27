@@ -43,6 +43,11 @@ public class CharacterServiceImpl implements CharacterService {
     @Override
     @Transactional
     public CharacterResponseDto createCharacter(CharacterCreateRequestDto request) {
+        // 요청 데이터 검증
+        if (request.attachment() == null) {
+            throw new IllegalArgumentException("애착타입은 필수입니다.");
+        }
+        
         // 1. Status 생성 (ERD에 따른 relation, start_day, end_day, like 필드)
         Status status = Status.builder()
                 .relation(Relation.yet) // 초기 상태는 아직 만나지 않음
