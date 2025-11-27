@@ -10,3 +10,6 @@ public record CharacterSelectResponseDto(
         CharacterResponseDto character
 ) {}
 
+
+
+

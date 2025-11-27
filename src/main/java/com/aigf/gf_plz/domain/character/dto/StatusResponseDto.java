@@ -15,3 +15,6 @@ public record StatusResponseDto(
         Integer like
 ) {}
 
+
+
+
