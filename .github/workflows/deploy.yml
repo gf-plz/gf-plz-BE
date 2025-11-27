@@ -109,9 +109,8 @@ jobs:
               
               # 포트 확인
               if netstat -tln 2>/dev/null | grep -q ":8080 " || ss -tln 2>/dev/null | grep -q ":8080 "; then
-                # 포트가 열렸으면 HTTP 요청으로 확인
-                if curl -s -f http://localhost:8080/actuator/health > /dev/null 2>&1 || \
-                   curl -s -f http://localhost:8080/api/characters > /dev/null 2>&1; then
+                # 포트가 열렸으면 HTTP 요청으로 확인 (실제 API 엔드포인트 사용)
+                if curl -s -f http://localhost:8080/api/characters > /dev/null 2>&1; then
                   SERVER_STARTED=true
                   echo "Server is responding on port 8080 after $WAIT_COUNT seconds"
                   break
