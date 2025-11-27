@@ -35,16 +35,18 @@ jobs:
 
       - name: Create .env file # 환경변수 넣기
         run: |
-          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" >> .env
+          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" > .env
 
       - name: Create google-credentials.json file
         run: |
           echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > google-credentials.json
 
-      # EC2 서버로 JAR 전송
-      - name: Copy JAR to EC2
+      # EC2 서버로 JAR 및 환경변수 파일 전송
+      - name: Copy JAR and env files to EC2
         run: |
           scp -o StrictHostKeyChecking=no build/libs/gf-plz-0.0.1-SNAPSHOT.jar ubuntu@3.27.10.133:/home/ubuntu/
+          scp -o StrictHostKeyChecking=no .env ubuntu@3.27.10.133:/home/ubuntu/
+          scp -o StrictHostKeyChecking=no google-credentials.json ubuntu@3.27.10.133:/home/ubuntu/
 
       # EC2 서버에서 기존 Spring Boot 종료 + 새 Jar 실행
       - name: Deploy on EC2
@@ -54,11 +56,40 @@ jobs:
             PID=$(pgrep -f "gf-plz-0.0.1-SNAPSHOT.jar")
             if [ -n "$PID" ]; then
               echo "Killing old process: $PID"
-              kill -9 $PID
+              kill -15 $PID  # SIGTERM으로 정상 종료 시도
+              sleep 5        # 프로세스 종료 대기
+              
+              # 여전히 실행 중이면 강제 종료
+              PID=$(pgrep -f "gf-plz-0.0.1-SNAPSHOT.jar")
+              if [ -n "$PID" ]; then
+                echo "Force killing process: $PID"
+                kill -9 $PID
+                sleep 2
+              fi
             fi
 
-            # 디렉터리 이동 후 새 서버 실행
+            # 데이터베이스 디렉터리 생성
+            mkdir -p /home/ubuntu/data/gfplz
+
+            # 디렉터리 이동 후 새 서버 실행 (프로파일 지정)
             cd /home/ubuntu
-            nohup java -jar gf-plz-0.0.1-SNAPSHOT.jar > log.txt 2>&1 &
-            echo "Deployment complete."
+            nohup java -jar -Dspring.profiles.active=prod \
+              -DDB_PATH=/home/ubuntu/data/gfplz \
+              gf-plz-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+            
+            echo "New process started with PID: $!"
+            echo "Waiting for server to start..."
+            sleep 10
+            
+            # 서버 시작 확인
+            if pgrep -f "gf-plz-0.0.1-SNAPSHOT.jar" > /dev/null; then
+              echo "Deployment complete. Server is running."
+              echo "Recent logs:"
+              tail -20 app.log
+            else
+              echo "ERROR: Server failed to start!"
+              echo "Last 50 lines of log:"
+              tail -50 app.log
+              exit 1
+            fi
           EOF
