@@ -53,6 +53,22 @@ google:
     tts:
       credentials-path: ${GOOGLE_APPLICATION_CREDENTIALS:/home/ubuntu/google-credentials.json}
 
+# 7. 로깅 설정 (성능 모니터링)
+logging:
+  level:
+    root: INFO
+    com.aigf.gf_plz: DEBUG  # 애플리케이션 로그 상세 출력
+    org.springframework.web: DEBUG  # HTTP 요청/응답 로그
+    org.hibernate.SQL: WARN  # SQL 로그는 WARN 레벨로 (성능 문제 시 DEBUG로 변경)
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /home/ubuntu/app.log
+    max-size: 10MB
+    max-history: 7
+
 
 
 
