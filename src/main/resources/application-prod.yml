@@ -16,9 +16,10 @@ spring:
     password: ${DB_PASSWORD:}
   
   # 2. H2 콘솔 (프로덕션에서는 보안상 비활성화 권장)
+  # 임시로 활성화 - 사용 후 반드시 비활성화할 것!
   h2:
     console:
-      enabled: false
+      enabled: true
       path: /h2-console
 
   # 3. JPA (DB 자동 생성)
