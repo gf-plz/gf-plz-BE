@@ -33,7 +33,7 @@ public class Status {
     @Column(name = "헤어지는 날짜")
     private LocalDateTime endDay;
 
-    @Column(name = "애정도")
+    @Column(name = "애정도", nullable = false)
     private Integer like; // 애정도 점수
 
     @Builder
