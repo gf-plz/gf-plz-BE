@@ -9,6 +9,7 @@ import com.aigf.gf_plz.global.whisper.exception.WhisperException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -39,6 +40,29 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Validation Failed",
+                message,
+                request.getDescription(false).replace("uri=", "")
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * JSON 파싱 오류 처리 (enum 파싱 실패 등)
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException ex,
+            WebRequest request
+    ) {
+        String message = "요청 데이터를 읽을 수 없습니다: " + ex.getMessage();
+        if (ex.getCause() != null) {
+            message += " (원인: " + ex.getCause().getMessage() + ")";
+        }
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Invalid Request",
                 message,
                 request.getDescription(false).replace("uri=", "")
         );
