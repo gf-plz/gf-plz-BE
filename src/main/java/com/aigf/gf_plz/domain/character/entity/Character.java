@@ -76,29 +76,6 @@ public class Character {
     }
 
     /**
-     * 캐릭터의 성격 프롬프트를 생성합니다.
-     * "너는 ENFJ 테토 80%의 안정형 여자친구야" 형식으로 반환합니다.
-     */
-    public String generatePersonalityPrompt() {
-        String mbti = this.mbti.name();
-        String teto = this.teto + "%";
-        String attachment = this.attachment.name();
-        String gender = this.gender == Gender.FEMALE ? "여자친구" : "남자친구";
-        String name = this.name;
-
-        StringBuilder prompt = new StringBuilder();
-        prompt.append(String.format("너는 %s 테토 %s의 %s %s야. 이름은 %s이야.", 
-                mbti, teto, attachment, gender, name));
-        
-        // 캐릭터 소개가 있으면 추가
-        if (this.description != null && !this.description.isBlank()) {
-            prompt.append("\n").append(this.description);
-        }
-        
-        return prompt.toString();
-    }
-
-    /**
      * AI에게 전달할 전체 시스템 프롬프트를 생성합니다.
      * 캐릭터의 성격 정보를 포함한 상세한 프롬프트를 반환합니다.
      */
