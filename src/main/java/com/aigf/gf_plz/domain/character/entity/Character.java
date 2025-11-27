@@ -6,8 +6,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 캐릭터 엔티티
+ * Status 정보도 함께 관리하도록 통합
  */
 @Entity
 @Table(name = "Character")
@@ -20,9 +23,20 @@ public class Character {
     @Column(name = "캐릭터ID")
     private Long characterId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "상태ID", nullable = false)
-    private Status status;
+    // --- Status Fields Merged ---
+    @Enumerated(EnumType.STRING)
+    @Column(name = "관계", nullable = false)
+    private Relation relation;
+
+    @Column(name = "만난 날짜")
+    private LocalDateTime startDay;
+
+    @Column(name = "헤어지는 날짜")
+    private LocalDateTime endDay;
+
+    @Column(name = "애정도", nullable = false)
+    private Integer like; // 애정도 점수
+    // ---------------------------
 
     @Column(name = "캐릭터 소개", columnDefinition = "TEXT")
     private String description;
@@ -54,7 +68,10 @@ public class Character {
 
     @Builder
     public Character(
-            Status status,
+            Relation relation,
+            LocalDateTime startDay,
+            LocalDateTime endDay,
+            Integer like,
             String description,
             String imageUrl,
             VoiceType voiceType,
@@ -64,7 +81,10 @@ public class Character {
             AttachmentType attachment,
             Integer teto
     ) {
-        this.status = status;
+        this.relation = relation != null ? relation : Relation.yet;
+        this.startDay = startDay;
+        this.endDay = endDay;
+        this.like = like != null ? like : 0;
         this.description = description;
         this.imageUrl = imageUrl;
         this.voiceType = voiceType;
@@ -74,6 +94,45 @@ public class Character {
         this.attachment = attachment;
         this.teto = teto;
     }
+
+    // --- Status Update Methods ---
+
+    /**
+     * 애정도를 업데이트합니다.
+     */
+    public void updateLike(Integer newLike) {
+        this.like = newLike;
+    }
+
+    /**
+     * 관계 상태를 업데이트합니다.
+     */
+    public void updateRelation(Relation relation) {
+        this.relation = relation;
+    }
+
+    /**
+     * 만난 날짜를 업데이트합니다.
+     */
+    public void updateStartDay(LocalDateTime startDay) {
+        this.startDay = startDay;
+    }
+
+    /**
+     * 헤어지는 날짜를 업데이트합니다.
+     */
+    public void updateEndDay(LocalDateTime endDay) {
+        this.endDay = endDay;
+    }
+
+    /**
+     * 만난 날짜와 헤어지는 날짜를 함께 업데이트합니다.
+     */
+    public void updateDates(LocalDateTime startDay, LocalDateTime endDay) {
+        this.startDay = startDay;
+        this.endDay = endDay;
+    }
+    // ---------------------------
 
     /**
      * AI에게 전달할 전체 시스템 프롬프트를 생성합니다.
