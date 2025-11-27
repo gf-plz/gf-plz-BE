@@ -74,24 +74,70 @@ jobs:
             # 디렉터리 이동 후 새 서버 실행 (프로파일 지정)
             cd /home/ubuntu
             export GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/google-credentials.json
+            
+            # 파일 존재 확인
+            echo "Checking required files..."
+            ls -la /home/ubuntu/gf-plz-0.0.1-SNAPSHOT.jar
+            ls -la /home/ubuntu/google-credentials.json
+            ls -la /home/ubuntu/.env
+            
             nohup java -jar -Dspring.profiles.active=prod \
               -DDB_PATH=/home/ubuntu/data/gfplz \
               -DGOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/google-credentials.json \
               gf-plz-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
             
-            echo "New process started with PID: $!"
+            NEW_PID=$!
+            echo "New process started with PID: $NEW_PID"
             echo "Waiting for server to start..."
-            sleep 10
+            
+            # 서버 시작 대기 (최대 60초)
+            MAX_WAIT=60
+            WAIT_COUNT=0
+            SERVER_STARTED=false
+            
+            while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
+              sleep 2
+              WAIT_COUNT=$((WAIT_COUNT + 2))
+              
+              # 프로세스 확인
+              if ! pgrep -f "gf-plz-0.0.1-SNAPSHOT.jar" > /dev/null; then
+                echo "ERROR: Process died after $WAIT_COUNT seconds!"
+                echo "Last 100 lines of log:"
+                tail -100 app.log
+                exit 1
+              fi
+              
+              # 포트 확인
+              if netstat -tln 2>/dev/null | grep -q ":8080 " || ss -tln 2>/dev/null | grep -q ":8080 "; then
+                # 포트가 열렸으면 HTTP 요청으로 확인
+                if curl -s -f http://localhost:8080/actuator/health > /dev/null 2>&1 || \
+                   curl -s -f http://localhost:8080/api/characters > /dev/null 2>&1; then
+                  SERVER_STARTED=true
+                  echo "Server is responding on port 8080 after $WAIT_COUNT seconds"
+                  break
+                fi
+              fi
+              
+              echo "Waiting... ($WAIT_COUNT/$MAX_WAIT seconds)"
+            done
             
             # 서버 시작 확인
-            if pgrep -f "gf-plz-0.0.1-SNAPSHOT.jar" > /dev/null; then
+            if [ "$SERVER_STARTED" = true ]; then
               echo "Deployment complete. Server is running."
+              echo "Process info:"
+              ps aux | grep "gf-plz-0.0.1-SNAPSHOT.jar" | grep -v grep
+              echo "Port status:"
+              netstat -tln 2>/dev/null | grep ":8080 " || ss -tln 2>/dev/null | grep ":8080 "
               echo "Recent logs:"
-              tail -20 app.log
+              tail -30 app.log
             else
-              echo "ERROR: Server failed to start!"
-              echo "Last 50 lines of log:"
-              tail -50 app.log
+              echo "ERROR: Server did not start within $MAX_WAIT seconds!"
+              echo "Process status:"
+              ps aux | grep "gf-plz-0.0.1-SNAPSHOT.jar" | grep -v grep || echo "No process found"
+              echo "Port status:"
+              netstat -tln 2>/dev/null | grep ":8080 " || ss -tln 2>/dev/null | grep ":8080 " || echo "Port 8080 not listening"
+              echo "Last 100 lines of log:"
+              tail -100 app.log
               exit 1
             fi
           EOF
