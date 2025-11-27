@@ -48,6 +48,12 @@ groq:
   url: "https://api.groq.com/openai/v1/chat/completions"
   model: "llama3-8b-8192"
 
+# 6. Google Cloud TTS 설정
+google:
+  cloud:
+    tts:
+      credentials-path: ${GOOGLE_APPLICATION_CREDENTIALS:/home/ubuntu/google-credentials.json}
+
 
 
 

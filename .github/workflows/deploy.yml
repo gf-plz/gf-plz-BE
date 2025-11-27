@@ -73,8 +73,10 @@ jobs:
 
             # 디렉터리 이동 후 새 서버 실행 (프로파일 지정)
             cd /home/ubuntu
+            export GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/google-credentials.json
             nohup java -jar -Dspring.profiles.active=prod \
               -DDB_PATH=/home/ubuntu/data/gfplz \
+              -DGOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/google-credentials.json \
               gf-plz-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
             
             echo "New process started with PID: $!"
