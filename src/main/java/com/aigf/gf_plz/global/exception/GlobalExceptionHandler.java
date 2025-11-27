@@ -4,8 +4,6 @@ import com.aigf.gf_plz.domain.character.exception.CharacterNotFoundException;
 import com.aigf.gf_plz.global.groq.exception.GroqApiException;
 import com.aigf.gf_plz.global.tts.exception.TtsException;
 import com.aigf.gf_plz.global.whisper.exception.WhisperException;
-import com.aigf.gf_plz.global.tts.exception.TtsException;
-import com.aigf.gf_plz.global.whisper.exception.WhisperException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
