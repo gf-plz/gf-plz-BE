@@ -13,11 +13,10 @@ import java.util.List;
  */
 public interface CharacterRepository extends JpaRepository<Character, Long> {
     /**
-     * Status의 relation으로 캐릭터 목록을 조회합니다.
+     * relation으로 캐릭터 목록을 조회합니다.
      * 
      * @param relation 관계 상태
      * @return 캐릭터 목록
      */
-    @Query("SELECT c FROM Character c WHERE c.status.relation = :relation")
-    List<Character> findByStatus_Relation(@Param("relation") Relation relation);
+    List<Character> findByRelation(Relation relation);
 }
