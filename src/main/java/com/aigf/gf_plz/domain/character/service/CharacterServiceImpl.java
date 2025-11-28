@@ -5,6 +5,7 @@ import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
 import com.aigf.gf_plz.domain.character.dto.StatusResponseDto;
 import com.aigf.gf_plz.domain.character.entity.Character;
+import com.aigf.gf_plz.domain.character.entity.Gender;
 import com.aigf.gf_plz.domain.character.entity.Relation;
 import com.aigf.gf_plz.domain.character.exception.CharacterNotFoundException;
 import com.aigf.gf_plz.domain.character.repository.CharacterRepository;
@@ -78,9 +79,14 @@ public class CharacterServiceImpl implements CharacterService {
 
     @Override
     @Transactional(readOnly = true)
-    public CharacterResponseDto getRecentCharacter() {
-        // 최근 활성 세션 조회
-        List<Session> recentSessions = sessionRepository.findRecentActiveSessions();
+    public CharacterResponseDto getRecentCharacter(Gender gender) {
+        // 최근 활성 세션 조회 (성별 필터링 적용)
+        List<Session> recentSessions;
+        if (gender == null) {
+            recentSessions = sessionRepository.findRecentActiveSessions();
+        } else {
+            recentSessions = sessionRepository.findRecentActiveSessionsByGender(gender);
+        }
         
         // 가장 최근 세션이 없으면 null 반환
         if (recentSessions.isEmpty()) {
@@ -214,15 +220,21 @@ public class CharacterServiceImpl implements CharacterService {
 
     @Override
     @Transactional
-    public List<CharacterResponseDto> getCharacters(Relation relation) {
+    public List<CharacterResponseDto> getCharacters(Relation relation, Gender gender) {
         List<Character> characters;
         
-        if (relation == null) {
-            // relation이 null이면 전체 조회
+        if (relation == null && gender == null) {
+            // 둘 다 null이면 전체 조회
             characters = characterRepository.findAll();
-        } else {
-            // relation으로 필터링
+        } else if (relation != null && gender != null) {
+            // 둘 다 있으면 둘 다로 필터링
+            characters = characterRepository.findByRelationAndGender(relation, gender);
+        } else if (relation != null) {
+            // relation만 있으면 relation으로 필터링
             characters = characterRepository.findByRelation(relation);
+        } else {
+            // gender만 있으면 gender로 필터링
+            characters = characterRepository.findByGender(gender);
         }
         
         // 각 캐릭터의 Status 만료 체크 및 DTO 변환

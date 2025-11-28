@@ -3,6 +3,7 @@ package com.aigf.gf_plz.domain.character.controller;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
+import com.aigf.gf_plz.domain.character.entity.Gender;
 import com.aigf.gf_plz.domain.character.entity.Relation;
 import com.aigf.gf_plz.domain.character.service.CharacterService;
 import jakarta.validation.Valid;
@@ -29,11 +30,14 @@ public class CharacterController {
      * 캐릭터 목록을 조회합니다.
      *
      * @param relation 관계 상태 필터 (선택사항)
+     * @param gender 성별 필터 (선택사항)
      * @return 캐릭터 목록
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
-    public List<CharacterResponseDto> getCharacters(@RequestParam(value = "relation", required = false) Relation relation) {
-        return characterService.getCharacters(relation);
+    public List<CharacterResponseDto> getCharacters(
+            @RequestParam(value = "relation", required = false) Relation relation,
+            @RequestParam(value = "gender", required = false) Gender gender) {
+        return characterService.getCharacters(relation, gender);
     }
 
     /**
@@ -61,11 +65,13 @@ public class CharacterController {
     /**
      * 가장 최근에 선택한 캐릭터를 조회합니다.
      *
+     * @param gender 성별 필터 (선택사항)
      * @return 최근 캐릭터 정보, 없으면 null
      */
     @GetMapping(value = "/recent", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
-    public CharacterResponseDto getRecentCharacter() {
-        return characterService.getRecentCharacter();
+    public CharacterResponseDto getRecentCharacter(
+            @RequestParam(value = "gender", required = false) Gender gender) {
+        return characterService.getRecentCharacter(gender);
     }
 
     /**

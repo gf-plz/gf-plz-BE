@@ -44,4 +44,12 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     @Query("SELECT s FROM Session s WHERE s.isActive = true AND s.lastMessageAt IS NOT NULL " +
            "ORDER BY s.lastMessageAt DESC")
     List<Session> findRecentActiveSessions();
+    
+    /**
+     * 성별로 필터링된 최근 활성 세션을 조회합니다.
+     * 각 캐릭터별로 가장 최근에 대화한 세션만 반환합니다.
+     */
+    @Query("SELECT s FROM Session s WHERE s.isActive = true AND s.lastMessageAt IS NOT NULL " +
+           "AND s.character.gender = :gender ORDER BY s.lastMessageAt DESC")
+    List<Session> findRecentActiveSessionsByGender(@Param("gender") com.aigf.gf_plz.domain.character.entity.Gender gender);
 }
