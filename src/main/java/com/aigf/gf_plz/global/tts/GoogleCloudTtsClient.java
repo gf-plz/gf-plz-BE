@@ -93,10 +93,24 @@ public class GoogleCloudTtsClient implements TtsClient {
                         System.setProperty("GOOGLE_APPLICATION_CREDENTIALS", finalCredentialsPath);
                         
                         // JSON 파일을 읽어서 검증하고 정리
-                        String jsonContent = new String(Files.readAllBytes(Paths.get(finalCredentialsPath)), StandardCharsets.UTF_8);
+                        byte[] fileBytes = Files.readAllBytes(Paths.get(finalCredentialsPath));
+                        String jsonContent = new String(fileBytes, StandardCharsets.UTF_8);
+                        
+                        // BOM(Byte Order Mark) 제거 (UTF-8 BOM: EF BB BF)
+                        if (jsonContent.startsWith("\uFEFF")) {
+                            jsonContent = jsonContent.substring(1);
+                            logger.info("UTF-8 BOM 제거됨");
+                        }
                         
                         // JSON 내용 정리 (앞뒤 공백 제거, 줄바꿈 정리)
                         jsonContent = jsonContent.trim();
+                        
+                        // 빈 파일 체크
+                        if (jsonContent.isEmpty()) {
+                            throw new TtsException(
+                                "Google Cloud TTS 인증 파일이 비어있습니다. 파일 경로를 확인해주세요: " + finalCredentialsPath
+                            );
+                        }
                         
                         // JSON 파싱하여 검증 및 정리
                         try {
@@ -121,11 +135,38 @@ public class GoogleCloudTtsClient implements TtsClient {
                             }
                         } catch (Exception jsonError) {
                             logger.error("JSON 파일 파싱 실패: {}", jsonError.getMessage());
-                            logger.error("JSON 내용 (처음 500자): {}", 
-                                jsonContent.length() > 500 ? jsonContent.substring(0, 500) : jsonContent);
+                            
+                            // 더 자세한 에러 정보 로깅
+                            String errorMessage = jsonError.getMessage();
+                            if (errorMessage != null && errorMessage.contains("line:")) {
+                                logger.error("JSON 파싱 오류 위치: {}", errorMessage);
+                            }
+                            
+                            // JSON 내용의 처음과 끝 부분 로깅
+                            int previewLength = Math.min(500, jsonContent.length());
+                            logger.error("JSON 내용 (처음 {}자): {}", previewLength, 
+                                jsonContent.substring(0, previewLength));
+                            
+                            if (jsonContent.length() > 500) {
+                                logger.error("JSON 내용 (마지막 200자): {}", 
+                                    jsonContent.substring(jsonContent.length() - 200));
+                            }
+                            
+                            // 파일 크기와 첫 몇 바이트를 16진수로 로깅 (BOM이나 특수 문자 확인)
+                            logger.error("파일 크기: {} bytes", fileBytes.length);
+                            if (fileBytes.length > 0) {
+                                StringBuilder hexPreview = new StringBuilder();
+                                int hexLength = Math.min(50, fileBytes.length);
+                                for (int i = 0; i < hexLength; i++) {
+                                    hexPreview.append(String.format("%02X ", fileBytes[i]));
+                                }
+                                logger.error("파일 첫 {} 바이트 (16진수): {}", hexLength, hexPreview.toString());
+                            }
+                            
                             throw new TtsException(
                                 "Google Cloud TTS 인증 파일 JSON 형식 오류: " + jsonError.getMessage() + 
-                                ". 파일이 올바른 JSON 형식인지 확인해주세요.", jsonError
+                                ". 파일이 올바른 JSON 형식인지 확인해주세요. 파일 경로: " + finalCredentialsPath, 
+                                jsonError
                             );
                         }
                         
