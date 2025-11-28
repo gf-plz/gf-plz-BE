@@ -54,6 +54,7 @@ google:
   cloud:
     tts:
       credentials-path: ${GOOGLE_APPLICATION_CREDENTIALS:/home/ubuntu/google-credentials.json}
+      project-id: ${GOOGLE_CLOUD_PROJECT_ID:}  # Google Cloud 프로젝트 ID
 
 # 7. 로깅 설정 (성능 모니터링)
 logging:

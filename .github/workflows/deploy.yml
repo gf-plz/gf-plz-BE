@@ -39,7 +39,21 @@ jobs:
 
       - name: Create google-credentials.json file
         run: |
-          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > google-credentials.json
+          # JSON 파일을 안전하게 생성
+          # printf를 사용하여 이스케이프 문자를 올바르게 처리
+          printf '%s\n' "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > google-credentials.json
+          # 파일이 생성되었는지 확인
+          if [ ! -f google-credentials.json ]; then
+            echo "ERROR: google-credentials.json 파일 생성 실패"
+            exit 1
+          fi
+          # 파일 크기 확인 (최소 100바이트 이상이어야 함)
+          FILE_SIZE=$(stat -f%z google-credentials.json 2>/dev/null || stat -c%s google-credentials.json 2>/dev/null || echo 0)
+          if [ "$FILE_SIZE" -lt 100 ]; then
+            echo "ERROR: google-credentials.json 파일이 너무 작습니다 (크기: $FILE_SIZE bytes)"
+            exit 1
+          fi
+          echo "google-credentials.json 파일 생성 완료 (크기: $FILE_SIZE bytes)"
 
       # EC2 서버로 JAR 및 환경변수 파일 전송
       - name: Copy JAR and env files to EC2
