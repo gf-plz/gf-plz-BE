@@ -38,6 +38,8 @@ jobs:
           echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" > .env
 
       - name: Create google-credentials.json file
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
         run: |
           # JSON 파일을 안전하게 생성
           # 환경 변수로 전달하여 Python 스크립트에서 안전하게 처리
@@ -59,10 +61,9 @@ jobs:
           try:
               # JSON 파싱하여 검증
               parsed = json.loads(credentials_json)
-              # 정리된 JSON으로 파일에 저장 (indent=2로 포맷팅, 마지막 줄바꿈 없음)
+              # 정리된 JSON으로 파일에 저장 (indent=2로 포맷팅)
               with open('google-credentials.json', 'w', encoding='utf-8', newline='\n') as f:
                   json.dump(parsed, f, ensure_ascii=False, indent=2)
-                  # 마지막 줄바꿈 제거를 위해 파일 크기 확인
               print("google-credentials.json 파일 생성 완료")
           except json.JSONDecodeError as e:
               print(f"ERROR: JSON 파싱 실패: {e}", file=sys.stderr)
@@ -78,8 +79,6 @@ jobs:
               print(f"ERROR: 파일 생성 실패: {e}", file=sys.stderr)
               sys.exit(1)
           PYTHON_SCRIPT
-        env:
-          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
           
           # 파일이 생성되었는지 확인
           if [ ! -f google-credentials.json ]; then
