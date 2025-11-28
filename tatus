@@ -1,0 +1,35 @@
+[33m8bc9da4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: H2 콘솔 활성화 및 원격 연결 허용 (임시 - DB 재생성용)
+M	src/main/java/com/aigf/gf_plz/global/config/CorsConfig.java
+M	src/main/resources/application-prod.yml
+[33m0bb90b0[m feat: 임시로 H2 콘솔 활성화 (DB 재생성용)
+M	src/main/resources/application-prod.yml
+[33me6638e3[m feat: Global 설정 및 TTS/Whisper 클라이언트 업데이트
+M	src/main/java/com/aigf/gf_plz/global/config/CorsConfig.java
+M	src/main/java/com/aigf/gf_plz/global/exception/GlobalExceptionHandler.java
+M	src/main/java/com/aigf/gf_plz/global/tts/TtsClient.java
+M	src/main/java/com/aigf/gf_plz/global/whisper/WhisperClient.java
+M	src/main/java/com/aigf/gf_plz/global/whisper/exception/WhisperException.java
+[33m7b93879[m feat: Session 기능 Entity 업데이트
+M	src/main/java/com/aigf/gf_plz/domain/session/entity/SessionType.java
+[33m43eb1ed[m feat: Message 기능 Controller, DTO, Entity, Service 업데이트
+M	src/main/java/com/aigf/gf_plz/domain/message/controller/MessageController.java
+M	src/main/java/com/aigf/gf_plz/domain/message/dto/MessageResponseDto.java
+M	src/main/java/com/aigf/gf_plz/domain/message/entity/Message.java
+M	src/main/java/com/aigf/gf_plz/domain/message/entity/SenderRole.java
+M	src/main/java/com/aigf/gf_plz/domain/message/service/MessageService.java
+M	src/main/java/com/aigf/gf_plz/domain/message/service/MessageServiceImpl.java
+[33m84b9f4c[m feat: Character 기능 DTO, 예외처리, Repository 업데이트
+M	src/main/java/com/aigf/gf_plz/domain/character/dto/CharacterSelectResponseDto.java
+M	src/main/java/com/aigf/gf_plz/domain/character/dto/StatusResponseDto.java
+M	src/main/java/com/aigf/gf_plz/domain/character/exception/CharacterNotFoundException.java
+M	src/main/java/com/aigf/gf_plz/domain/character/repository/StatusRepository.java
+[33md85cbce[m feat: Call 기능 DTO 업데이트
+M	src/main/java/com/aigf/gf_plz/domain/call/dto/CallAudioRequestDto.java
+M	src/main/java/com/aigf/gf_plz/domain/call/dto/CallAudioResponseDto.java
+[33m680f22a[m fix: Character 생성 시 애착타입 null 체크 추가
+M	src/main/java/com/aigf/gf_plz/domain/character/service/CharacterServiceImpl.java
+[33m8ebe271[m fix: CI/CD 배포 스크립트 개선 - 환경변수 파일 전송, 프로파일 활성화, 서버 시작 확인 추가
+M	.github/workflows/deploy.yml
+M	src/main/resources/application-prod.yml
+[33m73dfff0[m feat: CORS 설정 추가 - 프론트엔드 및 로컬 개발 서버 허용
+A	src/main/java/com/aigf/gf_plz/global/config/CorsConfig.java

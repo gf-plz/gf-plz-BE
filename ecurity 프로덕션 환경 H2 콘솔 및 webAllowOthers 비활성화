@@ -1,0 +1,25 @@
+warning: in the working copy of 'src/main/resources/application-prod.yml', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/main/resources/application-prod.yml b/src/main/resources/application-prod.yml[m
+[1mindex b5d1111..9b20c40 100644[m
+[1m--- a/src/main/resources/application-prod.yml[m
+[1m+++ b/src/main/resources/application-prod.yml[m
+[36m@@ -10,16 +10,15 @@[m [mspring:[m
+   datasource:[m
+     # EC2 서버의 /home/ec2-user/data 또는 /var/lib/gfplz 같은 경로에 저장[m
+     # 또는 환경변수로 경로 지정 가능: ${DB_PATH:/home/ec2-user/data/gfplz}[m
+[31m-    url: jdbc:h2:file:${DB_PATH:/home/ubuntu/data/gfplz};MODE=MySQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;NON_KEYWORDS=USER,VALUE;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE;webAllowOthers=true[m
+[32m+[m[32m    url: jdbc:h2:file:${DB_PATH:/home/ubuntu/data/gfplz};MODE=MySQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;NON_KEYWORDS=USER,VALUE;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE[m
+     driver-class-name: org.h2.Driver[m
+     username: ${DB_USERNAME:sa}[m
+     password: ${DB_PASSWORD:}[m
+   [m
+[31m-  # 2. H2 콘솔 (프로덕션에서는 보안상 비활성화 권장)[m
+[31m-  # 임시로 활성화 - 사용 후 반드시 비활성화할 것![m
+[32m+[m[32m  # 2. H2 콘솔 (프로덕션에서는 보안상 비활성화)[m
+   h2:[m
+     console:[m
+[31m-      enabled: true[m
+[32m+[m[32m      enabled: false[m
+       path: /h2-console[m
+ [m
+   # 3. JPA (DB 자동 생성)[m
