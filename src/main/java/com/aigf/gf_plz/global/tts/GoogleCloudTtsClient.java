@@ -19,9 +19,14 @@ import org.slf4j.LoggerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Google Cloud TTS 클라이언트 구현체
@@ -36,10 +41,8 @@ public class GoogleCloudTtsClient implements TtsClient {
     @Value("${google.cloud.tts.credentials-path:}")
     private String credentialsPath;
 
-    @Value("${google.cloud.tts.project-id:}")
-    private String projectId;
-
     private TextToSpeechClient textToSpeechClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * TextToSpeechClient를 초기화합니다.
@@ -89,6 +92,43 @@ public class GoogleCloudTtsClient implements TtsClient {
                         // 환경 변수로 설정 (Google Cloud 라이브러리가 자동으로 찾도록)
                         System.setProperty("GOOGLE_APPLICATION_CREDENTIALS", finalCredentialsPath);
                         
+                        // JSON 파일을 읽어서 검증하고 정리
+                        String jsonContent = new String(Files.readAllBytes(Paths.get(finalCredentialsPath)), StandardCharsets.UTF_8);
+                        
+                        // JSON 내용 정리 (앞뒤 공백 제거, 줄바꿈 정리)
+                        jsonContent = jsonContent.trim();
+                        
+                        // JSON 파싱하여 검증 및 정리
+                        try {
+                            // JSON 파싱 시도 (Jackson 사용)
+                            JsonNode jsonNode = objectMapper.readTree(jsonContent);
+                            
+                            // 정리된 JSON으로 다시 변환 (불필요한 공백 제거)
+                            String cleanedJson = objectMapper.writerWithDefaultPrettyPrinter()
+                                .writeValueAsString(jsonNode);
+                            // pretty printer를 사용하지 않고 compact 형식으로
+                            cleanedJson = objectMapper.writeValueAsString(jsonNode);
+                            
+                            // 원본과 다르면 정리된 버전을 임시 파일로 저장
+                            if (!cleanedJson.equals(jsonContent.trim())) {
+                                logger.info("JSON 파일 정리 중 (원본과 차이 발견)");
+                                File tempFile = File.createTempFile("google-credentials-", ".json");
+                                Files.write(tempFile.toPath(), cleanedJson.getBytes(StandardCharsets.UTF_8));
+                                finalCredentialsPath = tempFile.getAbsolutePath();
+                                logger.info("JSON 파일 정리 완료, 임시 파일 사용: {}", finalCredentialsPath);
+                            } else {
+                                logger.debug("JSON 파일 형식 검증 완료 (정리 불필요)");
+                            }
+                        } catch (Exception jsonError) {
+                            logger.error("JSON 파일 파싱 실패: {}", jsonError.getMessage());
+                            logger.error("JSON 내용 (처음 500자): {}", 
+                                jsonContent.length() > 500 ? jsonContent.substring(0, 500) : jsonContent);
+                            throw new TtsException(
+                                "Google Cloud TTS 인증 파일 JSON 형식 오류: " + jsonError.getMessage() + 
+                                ". 파일이 올바른 JSON 형식인지 확인해주세요.", jsonError
+                            );
+                        }
+                        
                         // ServiceAccountCredentials로 직접 로드
                         try (FileInputStream credentialsStream = new FileInputStream(finalCredentialsPath)) {
                             GoogleCredentials credentials = ServiceAccountCredentials
@@ -103,6 +143,11 @@ public class GoogleCloudTtsClient implements TtsClient {
                         logger.error("Google Cloud credentials 파일 읽기 실패: {}", finalCredentialsPath, e);
                         throw new TtsException(
                             "Google Cloud TTS 인증 파일 읽기 실패: " + e.getMessage(), e
+                        );
+                    } catch (Exception e) {
+                        logger.error("Google Cloud credentials 처리 중 오류: {}", finalCredentialsPath, e);
+                        throw new TtsException(
+                            "Google Cloud TTS 인증 파일 처리 실패: " + e.getMessage(), e
                         );
                     }
                 } else {
