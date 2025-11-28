@@ -21,3 +21,4 @@ CREATE TABLE "Character" (
     "테토력" INTEGER NOT NULL
 );
 
+

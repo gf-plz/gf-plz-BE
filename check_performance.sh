@@ -51,3 +51,4 @@ echo "- 에러만 필터링: grep -i error $SERVER_LOG | tail -50"
 
 
 
+
