@@ -58,6 +58,7 @@ public class CharacterServiceImpl implements CharacterService {
                 .name(request.name())
                 .attachment(request.attachment())
                 .teto(request.teto())
+                .aiSummary(null)
                 .build();
         
         Character savedCharacter = characterRepository.save(character);
@@ -215,6 +216,8 @@ public class CharacterServiceImpl implements CharacterService {
                 character.getImageUrl(),
                 character.getVoiceType(),
                 statusDto
+                ,
+                character.getAiSummary()
         );
     }
 
