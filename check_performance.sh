@@ -49,3 +49,4 @@ echo "- 실시간 로그 모니터링: tail -f $SERVER_LOG"
 echo "- 특정 시간대 로그: grep '2025-11-27 14:' $SERVER_LOG"
 echo "- 에러만 필터링: grep -i error $SERVER_LOG | tail -50"
 
+
