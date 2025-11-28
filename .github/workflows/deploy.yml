@@ -40,8 +40,8 @@ jobs:
       - name: Create google-credentials.json file
         run: |
           # JSON 파일을 안전하게 생성
-          # printf를 사용하여 이스케이프 문자를 올바르게 처리
-          printf '%s\n' "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > google-credentials.json
+          # echo -n을 사용하여 마지막 줄바꿈 없이 생성 (JSON 파싱 오류 방지)
+          echo -n "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > google-credentials.json
           # 파일이 생성되었는지 확인
           if [ ! -f google-credentials.json ]; then
             echo "ERROR: google-credentials.json 파일 생성 실패"
@@ -52,6 +52,19 @@ jobs:
           if [ "$FILE_SIZE" -lt 100 ]; then
             echo "ERROR: google-credentials.json 파일이 너무 작습니다 (크기: $FILE_SIZE bytes)"
             exit 1
+          fi
+          # JSON 형식 검증 (jq가 있으면 사용, 없으면 첫 문자가 '{'인지 확인)
+          if command -v jq &> /dev/null; then
+            if ! jq empty google-credentials.json 2>/dev/null; then
+              echo "WARNING: JSON 형식 검증 실패 (jq 사용)"
+            else
+              echo "JSON 형식 검증 성공 (jq 사용)"
+            fi
+          else
+            FIRST_CHAR=$(head -c 1 google-credentials.json)
+            if [ "$FIRST_CHAR" != "{" ]; then
+              echo "WARNING: JSON 파일이 '{'로 시작하지 않습니다 (첫 문자: $FIRST_CHAR)"
+            fi
           fi
           echo "google-credentials.json 파일 생성 완료 (크기: $FILE_SIZE bytes)"
 

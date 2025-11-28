@@ -55,23 +55,46 @@ public class GoogleCloudTtsClient implements TtsClient {
                 // 서비스 계정 키 파일이 지정된 경우 직접 credentials 로드
                 String finalCredentialsPath = null;
                 
+                String jsonContentDirect = null;
+                
                 if (credentialsPath != null && !credentialsPath.isBlank()) {
-                    File credentialsFile = new File(credentialsPath);
-                    if (!credentialsFile.exists()) {
-                        logger.error("Google Cloud credentials 파일을 찾을 수 없습니다: {}", credentialsPath);
-                        throw new TtsException(
-                            "Google Cloud TTS 인증 파일을 찾을 수 없습니다: " + credentialsPath + 
-                            ". 파일 경로를 확인하거나 환경 변수 GOOGLE_APPLICATION_CREDENTIALS를 설정해주세요."
-                        );
+                    // credentialsPath가 JSON 내용인지 파일 경로인지 확인
+                    if (credentialsPath.trim().startsWith("{")) {
+                        // JSON 내용으로 직접 제공된 경우
+                        jsonContentDirect = credentialsPath;
+                        logger.info("Google Cloud credentials가 JSON 내용으로 직접 제공됨");
+                    } else {
+                        // 파일 경로로 제공된 경우
+                        File credentialsFile = new File(credentialsPath);
+                        if (!credentialsFile.exists()) {
+                            logger.error("Google Cloud credentials 파일을 찾을 수 없습니다: {}", credentialsPath);
+                            throw new TtsException(
+                                "Google Cloud TTS 인증 파일을 찾을 수 없습니다: " + credentialsPath + 
+                                ". 파일 경로를 확인하거나 환경 변수 GOOGLE_APPLICATION_CREDENTIALS를 설정해주세요."
+                            );
+                        }
+                        finalCredentialsPath = credentialsFile.getAbsolutePath();
+                        logger.info("Google Cloud credentials 파일 로드 중: {}", finalCredentialsPath);
                     }
-                    finalCredentialsPath = credentialsFile.getAbsolutePath();
-                    logger.info("Google Cloud credentials 파일 로드 중: {}", finalCredentialsPath);
                 } else {
                     // credentialsPath가 없으면 환경 변수 GOOGLE_APPLICATION_CREDENTIALS 확인
                     String envCredentials = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
                     if (envCredentials != null && !envCredentials.isBlank()) {
-                        finalCredentialsPath = envCredentials;
-                        logger.info("환경 변수 GOOGLE_APPLICATION_CREDENTIALS 사용: {}", finalCredentialsPath);
+                        // 환경 변수가 JSON 내용인지 파일 경로인지 확인
+                        if (envCredentials.trim().startsWith("{")) {
+                            // JSON 내용으로 직접 제공된 경우
+                            jsonContentDirect = envCredentials;
+                            logger.info("환경 변수 GOOGLE_APPLICATION_CREDENTIALS가 JSON 내용으로 제공됨");
+                        } else {
+                            // 파일 경로로 제공된 경우
+                            File envFile = new File(envCredentials);
+                            if (envFile.exists()) {
+                                finalCredentialsPath = envFile.getAbsolutePath();
+                                logger.info("환경 변수 GOOGLE_APPLICATION_CREDENTIALS 파일 경로 사용: {}", finalCredentialsPath);
+                            } else {
+                                logger.warn("환경 변수 GOOGLE_APPLICATION_CREDENTIALS가 파일 경로로 보이지만 파일이 존재하지 않습니다: {}", envCredentials);
+                            }
+                        }
                     } else {
                         // 기본 경로 확인
                         File defaultCredentials = new File("./google-credentials.json");
@@ -86,15 +109,20 @@ public class GoogleCloudTtsClient implements TtsClient {
                     }
                 }
                 
-                // credentials 파일이 있으면 로드
-                if (finalCredentialsPath != null) {
+                // credentials 파일이 있거나 JSON 내용이 직접 제공된 경우 로드
+                if (finalCredentialsPath != null || jsonContentDirect != null) {
                     try {
-                        // 환경 변수로 설정 (Google Cloud 라이브러리가 자동으로 찾도록)
-                        System.setProperty("GOOGLE_APPLICATION_CREDENTIALS", finalCredentialsPath);
+                        String jsonContent;
                         
-                        // JSON 파일을 읽어서 검증하고 정리
-                        byte[] fileBytes = Files.readAllBytes(Paths.get(finalCredentialsPath));
-                        String jsonContent = new String(fileBytes, StandardCharsets.UTF_8);
+                        if (jsonContentDirect != null) {
+                            // JSON 내용이 직접 제공된 경우
+                            jsonContent = jsonContentDirect;
+                            logger.info("JSON 내용을 직접 사용하여 임시 파일 생성");
+                        } else {
+                            // 파일에서 읽기
+                            byte[] fileBytes = Files.readAllBytes(Paths.get(finalCredentialsPath));
+                            jsonContent = new String(fileBytes, StandardCharsets.UTF_8);
+                        }
                         
                         // BOM(Byte Order Mark) 제거 (UTF-8 BOM: EF BB BF)
                         if (jsonContent.startsWith("\uFEFF")) {
@@ -102,8 +130,14 @@ public class GoogleCloudTtsClient implements TtsClient {
                             logger.info("UTF-8 BOM 제거됨");
                         }
                         
-                        // JSON 내용 정리 (앞뒤 공백 제거, 줄바꿈 정리)
+                        // JSON 내용 정리 (앞뒤 공백 제거)
                         jsonContent = jsonContent.trim();
+                        
+                        // 첫 문자가 '{'인지 확인 (JSON 객체 시작)
+                        if (!jsonContent.startsWith("{")) {
+                            logger.error("JSON 파일이 '{'로 시작하지 않습니다. 첫 문자: '{}'", 
+                                jsonContent.length() > 0 ? jsonContent.charAt(0) : "빈 파일");
+                        }
                         
                         // 빈 파일 체크
                         if (jsonContent.isEmpty()) {
@@ -123,15 +157,24 @@ public class GoogleCloudTtsClient implements TtsClient {
                             // pretty printer를 사용하지 않고 compact 형식으로
                             cleanedJson = objectMapper.writeValueAsString(jsonNode);
                             
-                            // 원본과 다르면 정리된 버전을 임시 파일로 저장
-                            if (!cleanedJson.equals(jsonContent.trim())) {
-                                logger.info("JSON 파일 정리 중 (원본과 차이 발견)");
+                            // JSON 내용이 직접 제공되었거나 정리가 필요한 경우 임시 파일로 저장
+                            if (jsonContentDirect != null || !cleanedJson.equals(jsonContent.trim())) {
+                                if (jsonContentDirect != null) {
+                                    logger.info("JSON 내용을 임시 파일로 저장");
+                                } else {
+                                    logger.info("JSON 파일 정리 중 (원본과 차이 발견)");
+                                }
                                 File tempFile = File.createTempFile("google-credentials-", ".json");
                                 Files.write(tempFile.toPath(), cleanedJson.getBytes(StandardCharsets.UTF_8));
                                 finalCredentialsPath = tempFile.getAbsolutePath();
-                                logger.info("JSON 파일 정리 완료, 임시 파일 사용: {}", finalCredentialsPath);
+                                logger.info("임시 파일 생성 완료: {}", finalCredentialsPath);
                             } else {
                                 logger.debug("JSON 파일 형식 검증 완료 (정리 불필요)");
+                            }
+                            
+                            // 환경 변수로 설정 (Google Cloud 라이브러리가 자동으로 찾도록)
+                            if (finalCredentialsPath != null) {
+                                System.setProperty("GOOGLE_APPLICATION_CREDENTIALS", finalCredentialsPath);
                             }
                         } catch (Exception jsonError) {
                             logger.error("JSON 파일 파싱 실패: {}", jsonError.getMessage());
@@ -140,6 +183,29 @@ public class GoogleCloudTtsClient implements TtsClient {
                             String errorMessage = jsonError.getMessage();
                             if (errorMessage != null && errorMessage.contains("line:")) {
                                 logger.error("JSON 파싱 오류 위치: {}", errorMessage);
+                                
+                                // 라인 번호 추출
+                                try {
+                                    String lineInfo = errorMessage.substring(errorMessage.indexOf("line:"));
+                                    String lineNumStr = lineInfo.split(":")[1].split(",")[0].trim();
+                                    int lineNum = Integer.parseInt(lineNumStr);
+                                    
+                                    // 해당 라인 내용 로깅
+                                    String[] lines = jsonContent.split("\n");
+                                    if (lineNum > 0 && lineNum <= lines.length) {
+                                        logger.error("문제가 있는 라인 ({}번째 줄): [{}]", lineNum, lines[lineNum - 1]);
+                                        // 해당 라인의 문자를 하나씩 표시
+                                        String problemLine = lines[lineNum - 1];
+                                        StringBuilder charInfo = new StringBuilder();
+                                        for (int i = 0; i < Math.min(problemLine.length(), 100); i++) {
+                                            char c = problemLine.charAt(i);
+                                            charInfo.append(String.format("'%c'(%d) ", c, (int)c));
+                                        }
+                                        logger.error("라인 문자 정보: {}", charInfo.toString());
+                                    }
+                                } catch (Exception e) {
+                                    logger.debug("라인 정보 파싱 실패", e);
+                                }
                             }
                             
                             // JSON 내용의 처음과 끝 부분 로깅
@@ -153,14 +219,24 @@ public class GoogleCloudTtsClient implements TtsClient {
                             }
                             
                             // 파일 크기와 첫 몇 바이트를 16진수로 로깅 (BOM이나 특수 문자 확인)
-                            logger.error("파일 크기: {} bytes", fileBytes.length);
-                            if (fileBytes.length > 0) {
-                                StringBuilder hexPreview = new StringBuilder();
-                                int hexLength = Math.min(50, fileBytes.length);
-                                for (int i = 0; i < hexLength; i++) {
-                                    hexPreview.append(String.format("%02X ", fileBytes[i]));
+                            if (jsonContentDirect == null && finalCredentialsPath != null) {
+                                try {
+                                    byte[] fileBytes = Files.readAllBytes(Paths.get(finalCredentialsPath));
+                                    logger.error("파일 크기: {} bytes", fileBytes.length);
+                                    if (fileBytes.length > 0) {
+                                        StringBuilder hexPreview = new StringBuilder();
+                                        int hexLength = Math.min(100, fileBytes.length);
+                                        for (int i = 0; i < hexLength; i++) {
+                                            hexPreview.append(String.format("%02X ", fileBytes[i]));
+                                            if ((i + 1) % 16 == 0) {
+                                                hexPreview.append("\n");
+                                            }
+                                        }
+                                        logger.error("파일 첫 {} 바이트 (16진수):\n{}", hexLength, hexPreview.toString());
+                                    }
+                                } catch (Exception e) {
+                                    logger.debug("파일 바이트 정보 읽기 실패", e);
                                 }
-                                logger.error("파일 첫 {} 바이트 (16진수): {}", hexLength, hexPreview.toString());
                             }
                             
                             throw new TtsException(
