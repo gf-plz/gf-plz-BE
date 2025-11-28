@@ -213,9 +213,29 @@ public class GoogleCloudTtsClient implements TtsClient {
                             logger.error("JSON 내용 (처음 {}자): {}", previewLength, 
                                 jsonContent.substring(0, previewLength));
                             
+                            // 2번째 줄 주변 내용 상세 로깅 (오류 발생 위치)
+                            String[] lines = jsonContent.split("\n");
+                            if (lines.length >= 2) {
+                                logger.error("2번째 줄 내용: [{}]", lines[1]);
+                                // 2번째 줄의 각 문자를 상세히 표시
+                                StringBuilder charDetails = new StringBuilder();
+                                String line2 = lines[1];
+                                for (int i = 0; i < Math.min(line2.length(), 50); i++) {
+                                    char c = line2.charAt(i);
+                                    charDetails.append(String.format("'%c'(%d) ", c, (int)c));
+                                }
+                                logger.error("2번째 줄 문자 상세 (처음 50자): {}", charDetails.toString());
+                            }
+                            
                             if (jsonContent.length() > 500) {
                                 logger.error("JSON 내용 (마지막 200자): {}", 
                                     jsonContent.substring(jsonContent.length() - 200));
+                            }
+                            
+                            // 전체 파일 내용을 라인별로 로깅 (처음 10줄)
+                            logger.error("파일 내용 (처음 10줄):");
+                            for (int i = 0; i < Math.min(10, lines.length); i++) {
+                                logger.error("  라인 {}: [{}]", i + 1, lines[i]);
                             }
                             
                             // 파일 크기와 첫 몇 바이트를 16진수로 로깅 (BOM이나 특수 문자 확인)
