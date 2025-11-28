@@ -2,14 +2,13 @@ package com.aigf.gf_plz.domain.history.service;
 
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.StatusResponseDto;
-import com.aigf.gf_plz.domain.history.entity.RelationshipHistory;
-import com.aigf.gf_plz.domain.history.repository.RelationshipHistoryRepository;
+import com.aigf.gf_plz.domain.character.entity.Character;
 import com.aigf.gf_plz.domain.character.entity.Relation;
+import com.aigf.gf_plz.domain.character.repository.CharacterRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 /**
@@ -18,25 +17,24 @@ import java.util.stream.Collectors;
 @Service
 public class HistoryServiceImpl implements HistoryService {
 
-    private final RelationshipHistoryRepository historyRepository;
+    private final CharacterRepository characterRepository;
 
-    public HistoryServiceImpl(RelationshipHistoryRepository historyRepository) {
-        this.historyRepository = historyRepository;
+    public HistoryServiceImpl(CharacterRepository characterRepository) {
+        this.characterRepository = characterRepository;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<CharacterResponseDto> getHistory(Long historyId) {
-        return historyRepository.findByHistoryId(historyId).stream()
+    public List<CharacterResponseDto> getHistory() {
+        return characterRepository.findByRelation(Relation.ex).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
-    private CharacterResponseDto mapToDto(RelationshipHistory entry) {
-        var character = entry.getCharacter();
+    private CharacterResponseDto mapToDto(Character character) {
         var statusDto = new StatusResponseDto(
-                entry.getHistoryId(),
-                Relation.ex,
+                character.getCharacterId(),
+                character.getRelation(),
                 character.getStartDay(),
                 character.getEndDay(),
                 character.getLike()

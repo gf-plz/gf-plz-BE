@@ -23,8 +23,8 @@ public class HistoryController {
         this.historyService = historyService;
     }
 
-    @GetMapping(value = "/{historyId}", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
-    public List<CharacterResponseDto> getHistory(@PathVariable Long historyId) {
-        return historyService.getHistory(historyId);
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public List<CharacterResponseDto> getHistory() {
+        return historyService.getHistory();
     }
 }
