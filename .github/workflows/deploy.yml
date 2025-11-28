@@ -40,35 +40,46 @@ jobs:
       - name: Create google-credentials.json file
         run: |
           # JSON 파일을 안전하게 생성
-          # Python을 사용하여 JSON을 안전하게 파일로 저장 (이스케이프 문자 처리)
-          python3 << PYTHON_SCRIPT
+          # 환경 변수로 전달하여 Python 스크립트에서 안전하게 처리
+          python3 << 'PYTHON_SCRIPT'
           import json
           import sys
           import os
           
-          # GitHub Secrets에서 JSON 문자열 가져오기
-          credentials_json = """${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}"""
+          # GitHub Secrets에서 JSON 문자열 가져오기 (환경 변수로 전달)
+          credentials_json = os.environ.get('GOOGLE_CREDENTIALS_JSON', '')
           
           if not credentials_json or credentials_json.strip() == "":
-              print("ERROR: GOOGLE_APPLICATION_CREDENTIALS secret이 비어있습니다", file=sys.stderr)
+              print("ERROR: GOOGLE_CREDENTIALS_JSON 환경 변수가 비어있습니다", file=sys.stderr)
               sys.exit(1)
+          
+          # 앞뒤 공백 제거
+          credentials_json = credentials_json.strip()
           
           try:
               # JSON 파싱하여 검증
               parsed = json.loads(credentials_json)
-              # 정리된 JSON으로 파일에 저장 (indent=2로 포맷팅)
-              with open('google-credentials.json', 'w', encoding='utf-8') as f:
+              # 정리된 JSON으로 파일에 저장 (indent=2로 포맷팅, 마지막 줄바꿈 없음)
+              with open('google-credentials.json', 'w', encoding='utf-8', newline='\n') as f:
                   json.dump(parsed, f, ensure_ascii=False, indent=2)
+                  # 마지막 줄바꿈 제거를 위해 파일 크기 확인
               print("google-credentials.json 파일 생성 완료")
           except json.JSONDecodeError as e:
               print(f"ERROR: JSON 파싱 실패: {e}", file=sys.stderr)
               print(f"JSON 내용 (처음 500자): {credentials_json[:500]}", file=sys.stderr)
               print(f"오류 위치: line {e.lineno}, column {e.colno}", file=sys.stderr)
+              # 문제가 있는 라인 표시
+              if e.lineno > 0:
+                  lines = credentials_json.split('\n')
+                  if e.lineno <= len(lines):
+                      print(f"문제 라인 ({e.lineno}): {lines[e.lineno-1]}", file=sys.stderr)
               sys.exit(1)
           except Exception as e:
               print(f"ERROR: 파일 생성 실패: {e}", file=sys.stderr)
               sys.exit(1)
           PYTHON_SCRIPT
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
           
           # 파일이 생성되었는지 확인
           if [ ! -f google-credentials.json ]; then
@@ -110,6 +121,34 @@ jobs:
           scp -o StrictHostKeyChecking=no build/libs/gf-plz-0.0.1-SNAPSHOT.jar ubuntu@3.27.10.133:/home/ubuntu/
           scp -o StrictHostKeyChecking=no .env ubuntu@3.27.10.133:/home/ubuntu/
           scp -o StrictHostKeyChecking=no google-credentials.json ubuntu@3.27.10.133:/home/ubuntu/
+          # 서버에서 파일 검증
+          ssh -o StrictHostKeyChecking=no ubuntu@3.27.10.133 << 'VERIFY_EOF'
+            echo "서버에서 google-credentials.json 파일 검증 중..."
+            if [ ! -f /home/ubuntu/google-credentials.json ]; then
+              echo "ERROR: 파일이 서버에 존재하지 않습니다"
+              exit 1
+            fi
+            FILE_SIZE=$(stat -c%s /home/ubuntu/google-credentials.json 2>/dev/null || echo 0)
+            echo "파일 크기: $FILE_SIZE bytes"
+            FIRST_CHAR=$(head -c 1 /home/ubuntu/google-credentials.json)
+            if [ "$FIRST_CHAR" != "{" ]; then
+              echo "ERROR: JSON 파일이 '{'로 시작하지 않습니다 (첫 문자: '$FIRST_CHAR')"
+              echo "파일 첫 100바이트:"
+              head -c 100 /home/ubuntu/google-credentials.json | cat -A
+              exit 1
+            fi
+            # jq로 JSON 검증 (설치되어 있으면)
+            if command -v jq &> /dev/null; then
+              if ! jq empty /home/ubuntu/google-credentials.json 2>/dev/null; then
+                echo "ERROR: JSON 형식 검증 실패"
+                jq . /home/ubuntu/google-credentials.json 2>&1 | head -20
+                exit 1
+              else
+                echo "JSON 형식 검증 성공"
+              fi
+            fi
+            echo "파일 검증 완료"
+          VERIFY_EOF
 
       # EC2 서버에서 기존 Spring Boot 종료 + 새 Jar 실행
       - name: Deploy on EC2

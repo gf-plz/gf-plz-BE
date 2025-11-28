@@ -73,8 +73,16 @@ public class GoogleCloudTtsClient implements TtsClient {
                                 ". 파일 경로를 확인하거나 환경 변수 GOOGLE_APPLICATION_CREDENTIALS를 설정해주세요."
                             );
                         }
+                        // 파일 읽기 권한 확인
+                        if (!credentialsFile.canRead()) {
+                            logger.error("Google Cloud credentials 파일을 읽을 수 없습니다 (권한 없음): {}", credentialsPath);
+                            throw new TtsException(
+                                "Google Cloud TTS 인증 파일을 읽을 수 없습니다 (권한 없음): " + credentialsPath
+                            );
+                        }
                         finalCredentialsPath = credentialsFile.getAbsolutePath();
-                        logger.info("Google Cloud credentials 파일 로드 중: {}", finalCredentialsPath);
+                        logger.info("Google Cloud credentials 파일 로드 중: {} (크기: {} bytes)", 
+                            finalCredentialsPath, credentialsFile.length());
                     }
                 } else {
                     // credentialsPath가 없으면 환경 변수 GOOGLE_APPLICATION_CREDENTIALS 확인
