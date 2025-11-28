@@ -6,8 +6,6 @@ import com.aigf.gf_plz.domain.character.entity.Character;
 import com.aigf.gf_plz.domain.character.entity.Relation;
 import com.aigf.gf_plz.domain.character.exception.CharacterNotFoundException;
 import com.aigf.gf_plz.domain.character.repository.CharacterRepository;
-import com.aigf.gf_plz.domain.history.entity.RelationshipHistory;
-import com.aigf.gf_plz.domain.history.repository.RelationshipHistoryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,14 +18,9 @@ import java.time.LocalDateTime;
 public class ThreeDaysRelationServiceImpl implements ThreeDaysRelationService {
 
     private final CharacterRepository characterRepository;
-    private final RelationshipHistoryRepository historyRepository;
 
-    public ThreeDaysRelationServiceImpl(
-            CharacterRepository characterRepository,
-            RelationshipHistoryRepository historyRepository
-    ) {
+    public ThreeDaysRelationServiceImpl(CharacterRepository characterRepository) {
         this.characterRepository = characterRepository;
-        this.historyRepository = historyRepository;
     }
 
     @Override
@@ -39,12 +32,6 @@ public class ThreeDaysRelationServiceImpl implements ThreeDaysRelationService {
         character.updateRelation(Relation.ex);
         character.updateEndDay(LocalDateTime.now());
         characterRepository.save(character);
-
-        historyRepository.save(new RelationshipHistory(
-                character.getCharacterId(),
-                character,
-                LocalDateTime.now()
-        ));
 
         return new ThreeDaysRelationResponseDto(
                 "UPDATED",
