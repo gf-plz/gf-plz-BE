@@ -3,7 +3,6 @@ package com.aigf.gf_plz.global.tts;
 import com.aigf.gf_plz.global.tts.exception.TtsException;
 import com.google.cloud.texttospeech.v1.AudioConfig;
 import com.google.cloud.texttospeech.v1.AudioEncoding;
-import com.google.cloud.texttospeech.v1.SsmlVoiceGender;
 import com.google.cloud.texttospeech.v1.SynthesisInput;
 import com.google.cloud.texttospeech.v1.SynthesizeSpeechRequest;
 import com.google.cloud.texttospeech.v1.SynthesizeSpeechResponse;
@@ -14,10 +13,14 @@ import com.google.protobuf.ByteString;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.File;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.api.gax.core.FixedCredentialsProvider;
 
 /**
@@ -27,6 +30,8 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 @Service
 @Primary
 public class GoogleCloudTtsClient implements TtsClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(GoogleCloudTtsClient.class);
 
     @Value("${google.cloud.tts.credentials-path:}")
     private String credentialsPath;
@@ -45,17 +50,73 @@ public class GoogleCloudTtsClient implements TtsClient {
                 TextToSpeechSettings.Builder settingsBuilder = TextToSpeechSettings.newBuilder();
                 
                 // 서비스 계정 키 파일이 지정된 경우 직접 credentials 로드
+                String finalCredentialsPath = null;
+                
                 if (credentialsPath != null && !credentialsPath.isBlank()) {
-                    try (FileInputStream credentialsStream = new FileInputStream(credentialsPath)) {
-                        GoogleCredentials credentials = GoogleCredentials.fromStream(credentialsStream);
-                        settingsBuilder.setCredentialsProvider(FixedCredentialsProvider.create(credentials));
+                    File credentialsFile = new File(credentialsPath);
+                    if (!credentialsFile.exists()) {
+                        logger.error("Google Cloud credentials 파일을 찾을 수 없습니다: {}", credentialsPath);
+                        throw new TtsException(
+                            "Google Cloud TTS 인증 파일을 찾을 수 없습니다: " + credentialsPath + 
+                            ". 파일 경로를 확인하거나 환경 변수 GOOGLE_APPLICATION_CREDENTIALS를 설정해주세요."
+                        );
+                    }
+                    finalCredentialsPath = credentialsFile.getAbsolutePath();
+                    logger.info("Google Cloud credentials 파일 로드 중: {}", finalCredentialsPath);
+                } else {
+                    // credentialsPath가 없으면 환경 변수 GOOGLE_APPLICATION_CREDENTIALS 확인
+                    String envCredentials = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
+                    if (envCredentials != null && !envCredentials.isBlank()) {
+                        finalCredentialsPath = envCredentials;
+                        logger.info("환경 변수 GOOGLE_APPLICATION_CREDENTIALS 사용: {}", finalCredentialsPath);
+                    } else {
+                        // 기본 경로 확인
+                        File defaultCredentials = new File("./google-credentials.json");
+                        if (defaultCredentials.exists()) {
+                            finalCredentialsPath = defaultCredentials.getAbsolutePath();
+                            logger.info("기본 경로에서 credentials 파일 발견: {}", finalCredentialsPath);
+                        } else {
+                            logger.warn("Google Cloud credentials 파일을 찾을 수 없습니다. " +
+                                      "application.yml의 google.cloud.tts.credentials-path를 설정하거나 " +
+                                      "환경 변수 GOOGLE_APPLICATION_CREDENTIALS를 설정해주세요.");
+                        }
                     }
                 }
-                // credentialsPath가 없으면 환경 변수 GOOGLE_APPLICATION_CREDENTIALS 또는 기본 인증 사용
                 
+                // credentials 파일이 있으면 로드
+                if (finalCredentialsPath != null) {
+                    try {
+                        // 환경 변수로 설정 (Google Cloud 라이브러리가 자동으로 찾도록)
+                        System.setProperty("GOOGLE_APPLICATION_CREDENTIALS", finalCredentialsPath);
+                        
+                        // ServiceAccountCredentials로 직접 로드
+                        try (FileInputStream credentialsStream = new FileInputStream(finalCredentialsPath)) {
+                            GoogleCredentials credentials = ServiceAccountCredentials
+                                .fromStream(credentialsStream)
+                                .createScoped(
+                                    java.util.Collections.singletonList("https://www.googleapis.com/auth/cloud-platform")
+                                );
+                            settingsBuilder.setCredentialsProvider(FixedCredentialsProvider.create(credentials));
+                            logger.info("Google Cloud credentials 로드 완료");
+                        }
+                    } catch (IOException e) {
+                        logger.error("Google Cloud credentials 파일 읽기 실패: {}", finalCredentialsPath, e);
+                        throw new TtsException(
+                            "Google Cloud TTS 인증 파일 읽기 실패: " + e.getMessage(), e
+                        );
+                    }
+                } else {
+                    // credentials 파일이 없으면 기본 인증 사용 (환경 변수에서 자동으로 찾음)
+                    logger.info("Google Cloud 기본 인증 사용 (환경 변수 또는 기본 위치에서 자동 검색)");
+                }
+                
+                logger.info("Google Cloud TTS 클라이언트 초기화 중...");
                 textToSpeechClient = TextToSpeechClient.create(settingsBuilder.build());
+                logger.info("Google Cloud TTS 클라이언트 초기화 완료");
             } catch (IOException e) {
                 String errorMsg = e.getMessage();
+                logger.error("Google Cloud TTS 클라이언트 초기화 실패: {}", errorMsg, e);
+                
                 if (errorMsg != null && errorMsg.contains("credentials were not found")) {
                     throw new TtsException(
                         "Google Cloud TTS 인증 정보를 찾을 수 없습니다. " +
@@ -66,6 +127,9 @@ public class GoogleCloudTtsClient implements TtsClient {
                     );
                 }
                 throw new TtsException("Google Cloud TTS 클라이언트 초기화 실패: " + errorMsg, e);
+            } catch (Exception e) {
+                logger.error("Google Cloud TTS 클라이언트 초기화 중 예상치 못한 오류 발생", e);
+                throw new TtsException("Google Cloud TTS 클라이언트 초기화 실패: " + e.getMessage(), e);
             }
         }
     }
@@ -107,6 +171,8 @@ public class GoogleCloudTtsClient implements TtsClient {
             String ssmlText = wrapWithSsml(text);
             
             // TTS 요청 생성
+            logger.debug("TTS 요청 생성 중 - 텍스트 길이: {}, VoiceType: {}, VoiceName: {}", 
+                        text.length(), voiceType, voiceName);
             SynthesizeSpeechRequest request = SynthesizeSpeechRequest.newBuilder()
                     .setInput(SynthesisInput.newBuilder().setSsml(ssmlText).build())
                     .setVoice(voice)
@@ -114,16 +180,25 @@ public class GoogleCloudTtsClient implements TtsClient {
                     .build();
 
             // TTS API 호출
+            logger.info("Google Cloud TTS API 호출 중...");
             SynthesizeSpeechResponse response = textToSpeechClient.synthesizeSpeech(request);
+            logger.info("Google Cloud TTS API 호출 성공");
 
             // 오디오 데이터 추출
             ByteString audioContents = response.getAudioContent();
+            if (audioContents == null || audioContents.isEmpty()) {
+                logger.error("TTS API 응답이 비어있습니다.");
+                throw new TtsException("TTS API 응답이 비어있습니다.");
+            }
+            
+            logger.debug("오디오 데이터 추출 완료 - 크기: {} bytes", audioContents.size());
             return audioContents.toByteArray();
 
         } catch (Exception e) {
             if (e instanceof TtsException) {
                 throw e;
             }
+            logger.error("Google Cloud TTS API 호출 실패: {}", e.getMessage(), e);
             throw new TtsException("Google Cloud TTS API 호출 실패: " + e.getMessage(), e);
         }
     }
