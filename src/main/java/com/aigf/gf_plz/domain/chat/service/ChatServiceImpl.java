@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -149,7 +150,7 @@ public class ChatServiceImpl implements ChatService {
 
     /**
      * 세션을 조회하거나 생성합니다.
-     * 여러 활성 세션이 있을 경우 가장 최근에 메시지가 있는 세션을 사용합니다.
+     * 기존 세션이 있으면 재사용하고, 없을 때만 새로 생성합니다.
      */
     private Session findOrCreateSession(
             java.util.Optional<Long> sessionId,
@@ -158,24 +159,59 @@ public class ChatServiceImpl implements ChatService {
     ) {
         // sessionId가 제공된 경우
         if (sessionId.isPresent()) {
-            return sessionRepository
-                    .findBySessionIdAndIsActiveTrue(sessionId.get())
-                    .orElseGet(() -> createNewSession(characterId, sessionType));
+            Long providedSessionId = sessionId.get();
+            // 활성 여부와 관계없이 세션 조회
+            Optional<Session> existingSession = sessionRepository.findBySessionId(providedSessionId);
+            
+            if (existingSession.isPresent()) {
+                Session session = existingSession.get();
+                // 세션이 해당 캐릭터와 세션 타입과 일치하는지 확인
+                if (session.getCharacter().getCharacterId().equals(characterId) 
+                        && session.getSessionType() == sessionType) {
+                    // 비활성화되어 있으면 재활성화
+                    if (!session.getIsActive()) {
+                        session.activate();
+                        sessionRepository.save(session);
+                        logger.debug("비활성 세션 재활성화 - SessionId: {}, CharacterId: {}", 
+                                session.getSessionId(), characterId);
+                    }
+                    return session;
+                } else {
+                    logger.warn("제공된 세션 ID가 캐릭터 또는 세션 타입과 일치하지 않음 - SessionId: {}, CharacterId: {}, SessionType: {}", 
+                            providedSessionId, characterId, sessionType);
+                    // 일치하지 않으면 기존 세션 무시하고 새로 찾거나 생성
+                }
+            }
         }
 
-        // sessionId가 없는 경우 - characterId로 가장 최근 활성 세션 조회
+        // sessionId가 없거나 제공된 sessionId가 유효하지 않은 경우
+        // 1. 먼저 활성 세션 조회
         List<Session> activeSessions = sessionRepository
                 .findByCharacterIdAndSessionTypeAndIsActiveTrueOrderByLastMessageAtDesc(characterId, sessionType);
         
         if (!activeSessions.isEmpty()) {
-            // 가장 최근 세션 반환
+            // 가장 최근 활성 세션 반환
             Session mostRecentSession = activeSessions.get(0);
             logger.debug("기존 활성 세션 사용 - SessionId: {}, CharacterId: {}, LastMessageAt: {}", 
                     mostRecentSession.getSessionId(), characterId, mostRecentSession.getLastMessageAt());
             return mostRecentSession;
         }
 
-        // 활성 세션이 없으면 새로 생성
+        // 2. 활성 세션이 없으면 비활성 세션도 조회 (비활성 포함)
+        List<Session> allSessions = sessionRepository
+                .findByCharacterIdAndSessionTypeOrderByLastMessageAtDesc(characterId, sessionType);
+        
+        if (!allSessions.isEmpty()) {
+            // 가장 최근 세션을 재활성화하여 사용
+            Session mostRecentSession = allSessions.get(0);
+            mostRecentSession.activate();
+            sessionRepository.save(mostRecentSession);
+            logger.debug("비활성 세션 재활성화하여 사용 - SessionId: {}, CharacterId: {}, LastMessageAt: {}", 
+                    mostRecentSession.getSessionId(), characterId, mostRecentSession.getLastMessageAt());
+            return mostRecentSession;
+        }
+
+        // 3. 정말 세션이 없을 때만 새로 생성
         logger.debug("새 세션 생성 - CharacterId: {}, SessionType: {}", characterId, sessionType);
         return createNewSession(characterId, sessionType);
     }

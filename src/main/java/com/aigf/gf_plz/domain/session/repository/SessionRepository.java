@@ -20,6 +20,11 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     Optional<Session> findBySessionIdAndIsActiveTrue(Long sessionId);
 
     /**
+     * 세션 ID로 세션을 조회합니다 (활성 여부와 관계없이).
+     */
+    Optional<Session> findBySessionId(Long sessionId);
+
+    /**
      * 캐릭터 ID, 세션 타입, 활성화 상태로 세션을 조회합니다.
      */
     @Query("SELECT s FROM Session s WHERE s.character.characterId = :characterId AND s.sessionType = :sessionType AND s.isActive = true")
@@ -63,4 +68,12 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     @Query("SELECT s FROM Session s WHERE s.isActive = true AND s.lastMessageAt IS NOT NULL " +
            "AND s.character.gender = :gender ORDER BY s.lastMessageAt DESC")
     List<Session> findRecentActiveSessionsByGender(@Param("gender") com.aigf.gf_plz.domain.character.entity.Gender gender);
+
+    /**
+     * 캐릭터 ID로 가장 최근 세션을 조회합니다 (세션 타입 무관, 비활성 포함).
+     * lastMessageAt 기준으로 정렬하며, 없으면 createdAt 기준으로 정렬합니다.
+     */
+    @Query("SELECT s FROM Session s WHERE s.character.characterId = :characterId " +
+           "ORDER BY s.lastMessageAt DESC NULLS LAST, s.createdAt DESC")
+    List<Session> findByCharacterIdOrderByLastMessageAtDesc(@Param("characterId") Long characterId);
 }

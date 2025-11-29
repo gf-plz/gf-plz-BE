@@ -63,6 +63,13 @@ public class Session {
     public void deactivate() {
         this.isActive = false;
     }
+
+    /**
+     * 세션을 재활성화합니다.
+     */
+    public void activate() {
+        this.isActive = true;
+    }
 }
 
 
