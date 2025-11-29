@@ -1,6 +1,7 @@
 package com.aigf.gf_plz.domain.history.service;
 
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
+import com.aigf.gf_plz.domain.character.entity.Gender;
 
 import java.util.List;
 
