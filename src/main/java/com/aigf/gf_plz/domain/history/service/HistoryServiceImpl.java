@@ -3,6 +3,7 @@ package com.aigf.gf_plz.domain.history.service;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.StatusResponseDto;
 import com.aigf.gf_plz.domain.character.entity.Character;
+import com.aigf.gf_plz.domain.character.entity.Gender;
 import com.aigf.gf_plz.domain.character.entity.Relation;
 import com.aigf.gf_plz.domain.character.repository.CharacterRepository;
 import org.springframework.stereotype.Service;
@@ -25,8 +26,11 @@ public class HistoryServiceImpl implements HistoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CharacterResponseDto> getHistory() {
-        return characterRepository.findByRelation(Relation.ex).stream()
+    public List<CharacterResponseDto> getHistory(Gender gender) {
+        var characters = gender == null
+                ? characterRepository.findByRelation(Relation.ex)
+                : characterRepository.findByRelationAndGender(Relation.ex, gender);
+        return characters.stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
