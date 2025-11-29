@@ -72,8 +72,7 @@ public class CharacterServiceImpl implements CharacterService {
         Character character = characterRepository.findById(characterId)
                 .orElseThrow(() -> new CharacterNotFoundException(characterId));
         
-        // Status 만료 체크
-        checkAndUpdateExpiredStatus(character);
+        // Status 만료 체크 (프론트에서 처리)
         
         return toResponseDto(character);
     }
@@ -98,8 +97,7 @@ public class CharacterServiceImpl implements CharacterService {
         Session mostRecentSession = recentSessions.get(0);
         Character character = mostRecentSession.getCharacter();
         
-        // Status 만료 체크
-        checkAndUpdateExpiredStatus(character);
+        // Status 만료 체크 (프론트에서 처리)
         
         return toResponseDto(character);
     }
@@ -111,8 +109,7 @@ public class CharacterServiceImpl implements CharacterService {
         Character character = characterRepository.findById(characterId)
                 .orElseThrow(() -> new CharacterNotFoundException(characterId));
         
-        // 2. Status 만료 체크 및 업데이트
-        checkAndUpdateExpiredStatus(character); // 만료 체크 먼저
+        // 2. Status 만료 체크 및 업데이트 (프론트에서 처리)
         
         // 3. 캐릭터 선택 시 Status를 now로 변경하고 날짜 설정
         LocalDateTime now = LocalDateTime.now();
@@ -147,14 +144,6 @@ public class CharacterServiceImpl implements CharacterService {
         );
     }
 
-    /**
-     * Status의 만료 여부를 체크하고, 만료되었으면 ex로 변경합니다.
-     */
-    @Transactional
-    private void checkAndUpdateExpiredStatus(Character character) {
-        // 자동 Expiration 해제: 기존 경과 이후 자동 변경 동작을 제거합니다.
-    }
-
     @Override
     @Transactional
     public CharacterResponseDto extendRelationship(Long characterId) {
@@ -162,8 +151,7 @@ public class CharacterServiceImpl implements CharacterService {
         Character character = characterRepository.findById(characterId)
                 .orElseThrow(() -> new CharacterNotFoundException(characterId));
         
-        // 2. Status 확인 및 만료 체크
-        checkAndUpdateExpiredStatus(character);
+        // 2. Status 확인 및 만료 체크 (프론트가 판단)
         
         // 3. 현재 연애 중인 경우에만 연장 가능
         if (character.getRelation() != Relation.now) {
@@ -235,12 +223,8 @@ public class CharacterServiceImpl implements CharacterService {
             characters = characterRepository.findByGender(gender);
         }
         
-        // 각 캐릭터의 Status 만료 체크 및 DTO 변환
         return characters.stream()
-                .map(character -> {
-                    checkAndUpdateExpiredStatus(character);
-                    return toResponseDto(character);
-                })
+                .map(this::toResponseDto)
                 .toList();
     }
 }
