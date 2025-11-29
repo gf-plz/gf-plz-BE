@@ -149,6 +149,7 @@ public class ChatServiceImpl implements ChatService {
 
     /**
      * 세션을 조회하거나 생성합니다.
+     * 여러 활성 세션이 있을 경우 가장 최근에 메시지가 있는 세션을 사용합니다.
      */
     private Session findOrCreateSession(
             java.util.Optional<Long> sessionId,
@@ -162,10 +163,21 @@ public class ChatServiceImpl implements ChatService {
                     .orElseGet(() -> createNewSession(characterId, sessionType));
         }
 
-        // sessionId가 없는 경우 - characterId로 활성 세션 조회
-        return sessionRepository
-                .findByCharacterIdAndSessionTypeAndIsActiveTrue(characterId, sessionType)
-                .orElseGet(() -> createNewSession(characterId, sessionType));
+        // sessionId가 없는 경우 - characterId로 가장 최근 활성 세션 조회
+        List<Session> activeSessions = sessionRepository
+                .findByCharacterIdAndSessionTypeAndIsActiveTrueOrderByLastMessageAtDesc(characterId, sessionType);
+        
+        if (!activeSessions.isEmpty()) {
+            // 가장 최근 세션 반환
+            Session mostRecentSession = activeSessions.get(0);
+            logger.debug("기존 활성 세션 사용 - SessionId: {}, CharacterId: {}, LastMessageAt: {}", 
+                    mostRecentSession.getSessionId(), characterId, mostRecentSession.getLastMessageAt());
+            return mostRecentSession;
+        }
+
+        // 활성 세션이 없으면 새로 생성
+        logger.debug("새 세션 생성 - CharacterId: {}, SessionType: {}", characterId, sessionType);
+        return createNewSession(characterId, sessionType);
     }
 
     /**

@@ -29,6 +29,17 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     );
 
     /**
+     * 캐릭터 ID, 세션 타입, 활성화 상태로 가장 최근 세션을 조회합니다 (lastMessageAt 기준).
+     * 여러 활성 세션이 있을 경우 가장 최근에 메시지가 있는 세션을 반환합니다.
+     */
+    @Query("SELECT s FROM Session s WHERE s.character.characterId = :characterId AND s.sessionType = :sessionType AND s.isActive = true " +
+           "ORDER BY s.lastMessageAt DESC NULLS LAST, s.createdAt DESC")
+    List<Session> findByCharacterIdAndSessionTypeAndIsActiveTrueOrderByLastMessageAtDesc(
+            @Param("characterId") Long characterId,
+            @Param("sessionType") SessionType sessionType
+    );
+
+    /**
      * 캐릭터 ID와 세션 타입으로 최근 세션을 조회합니다 (비활성 포함).
      */
     @Query("SELECT s FROM Session s WHERE s.character.characterId = :characterId AND s.sessionType = :sessionType ORDER BY s.lastMessageAt DESC")

@@ -12,18 +12,21 @@ import com.aigf.gf_plz.domain.character.repository.CharacterRepository;
 import com.aigf.gf_plz.domain.session.entity.Session;
 import com.aigf.gf_plz.domain.session.entity.SessionType;
 import com.aigf.gf_plz.domain.session.repository.SessionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 캐릭터 서비스 구현체
  */
 @Service
 public class CharacterServiceImpl implements CharacterService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CharacterServiceImpl.class);
 
     private final CharacterRepository characterRepository;
     private final SessionRepository sessionRepository;
@@ -121,14 +124,16 @@ public class CharacterServiceImpl implements CharacterService {
         character.updateEndDay(now.plusDays(3));
         characterRepository.save(character);
         
-        // 4. 기존 활성 세션이 있는지 확인 (CHAT 타입 우선)
-        Optional<Session> existingChatSession = sessionRepository
-                .findByCharacterIdAndSessionTypeAndIsActiveTrue(characterId, SessionType.CHAT);
+        // 4. 기존 활성 세션이 있는지 확인 (CHAT 타입 우선, 가장 최근 세션 사용)
+        List<Session> existingChatSessions = sessionRepository
+                .findByCharacterIdAndSessionTypeAndIsActiveTrueOrderByLastMessageAtDesc(characterId, SessionType.CHAT);
         
         Session session;
-        if (existingChatSession.isPresent()) {
-            // 기존 세션이 있으면 활성화 상태 유지
-            session = existingChatSession.get();
+        if (!existingChatSessions.isEmpty()) {
+            // 가장 최근 활성 세션 사용
+            session = existingChatSessions.get(0);
+            logger.debug("기존 활성 세션 사용 - SessionId: {}, CharacterId: {}, LastMessageAt: {}", 
+                    session.getSessionId(), characterId, session.getLastMessageAt());
         } else {
             // 기존 세션이 없으면 새 세션 생성 (CHAT 타입)
             session = Session.builder()
@@ -136,6 +141,8 @@ public class CharacterServiceImpl implements CharacterService {
                     .sessionType(SessionType.CHAT)
                     .build();
             session = sessionRepository.save(session);
+            logger.debug("새 세션 생성 - SessionId: {}, CharacterId: {}", 
+                    session.getSessionId(), characterId);
         }
         
         // 5. 응답 DTO 생성
