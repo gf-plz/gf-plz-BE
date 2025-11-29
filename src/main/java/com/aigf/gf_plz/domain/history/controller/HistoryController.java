@@ -1,11 +1,12 @@
 package com.aigf.gf_plz.domain.history.controller;
 
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
+import com.aigf.gf_plz.domain.character.entity.Gender;
 import com.aigf.gf_plz.domain.history.service.HistoryService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -24,7 +25,7 @@ public class HistoryController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
-    public List<CharacterResponseDto> getHistory() {
-        return historyService.getHistory();
+    public List<CharacterResponseDto> getHistory(@RequestParam(value = "gender", required = false) Gender gender) {
+        return historyService.getHistory(gender);
     }
 }
