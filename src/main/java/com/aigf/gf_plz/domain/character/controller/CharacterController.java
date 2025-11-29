@@ -107,4 +107,15 @@ public class CharacterController {
     public SessionIdResponseDto getRecentSessionId(@PathVariable Long characterId) {
         return characterService.getRecentSessionId(characterId);
     }
+
+    /**
+     * 테스트용: 헤어지는 날짜를 현재 시간으로 당깁니다.
+     *
+     * @param characterId 캐릭터 ID
+     * @return 업데이트된 캐릭터 정보
+     */
+    @PostMapping(value = "/{characterId}/fast-forward-end-day", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public CharacterResponseDto fastForwardEndDay(@PathVariable Long characterId) {
+        return characterService.fastForwardEndDay(characterId);
+    }
 }

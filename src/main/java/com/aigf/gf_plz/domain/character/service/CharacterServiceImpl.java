@@ -257,4 +257,23 @@ public class CharacterServiceImpl implements CharacterService {
         Session mostRecentSession = sessions.get(0);
         return new SessionIdResponseDto(characterId, mostRecentSession.getSessionId());
     }
+
+    @Override
+    @Transactional
+    public CharacterResponseDto fastForwardEndDay(Long characterId) {
+        // 1. 캐릭터 조회
+        Character character = characterRepository.findById(characterId)
+                .orElseThrow(() -> new CharacterNotFoundException(characterId));
+        
+        // 2. 헤어지는 날짜를 현재 시간으로 설정 (테스트용)
+        LocalDateTime now = LocalDateTime.now();
+        character.updateEndDay(now);
+        characterRepository.save(character);
+        
+        logger.debug("테스트용: 헤어지는 날짜를 현재 시간으로 설정 - CharacterId: {}, EndDay: {}", 
+                characterId, now);
+        
+        // 3. 응답 DTO 생성
+        return toResponseDto(character);
+    }
 }

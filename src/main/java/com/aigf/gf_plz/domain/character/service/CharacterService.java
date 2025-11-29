@@ -68,4 +68,12 @@ public interface CharacterService {
      * @return 세션 ID 응답 (세션이 없으면 null)
      */
     com.aigf.gf_plz.domain.character.dto.SessionIdResponseDto getRecentSessionId(Long characterId);
+    
+    /**
+     * 테스트용: 헤어지는 날짜를 현재 시간으로 당깁니다.
+     * 
+     * @param characterId 캐릭터 ID
+     * @return 업데이트된 캐릭터 정보
+     */
+    CharacterResponseDto fastForwardEndDay(Long characterId);
 }
