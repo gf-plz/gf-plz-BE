@@ -95,16 +95,27 @@ public class GroqClientImpl implements GroqClient {
 
             return reply;
         } catch (WebClientResponseException e) {
-            throw new GroqApiException(
-                    String.format("Groq API 호출 실패: %s - %s", e.getStatusCode(), e.getResponseBodyAsString()),
-                    e
-            );
+            String errorMessage = getErrorMessageByStatusCode(e.getStatusCode().value(), e.getResponseBodyAsString());
+            throw new GroqApiException(errorMessage, e);
         } catch (Exception e) {
             if (e instanceof GroqApiException) {
                 throw e;
             }
             throw new GroqApiException("Groq API 호출 중 예상치 못한 오류가 발생했습니다.", e);
         }
+    }
+
+    /**
+     * HTTP 상태 코드에 따라 적절한 에러 메시지를 반환합니다.
+     */
+    private String getErrorMessageByStatusCode(int statusCode, String responseBody) {
+        return switch (statusCode) {
+            case 401 -> String.format("Groq API 인증 실패 (401): API 키가 유효하지 않습니다. - %s", responseBody);
+            case 429 -> String.format("Groq API 호출 제한 초과 (429): 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요. - %s", responseBody);
+            case 500, 502, 503, 504 -> String.format("Groq API 서버 오류 (%d): Groq 서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요. - %s", statusCode, responseBody);
+            case 400 -> String.format("Groq API 잘못된 요청 (400): 요청 형식이 올바르지 않습니다. - %s", responseBody);
+            default -> String.format("Groq API 호출 실패 (%d): %s", statusCode, responseBody);
+        };
     }
 }
 

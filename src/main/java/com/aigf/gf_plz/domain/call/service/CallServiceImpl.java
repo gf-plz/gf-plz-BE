@@ -98,10 +98,14 @@ public class CallServiceImpl implements CallService {
             String reply;
             try {
                 reply = groqClient.generateReply("call", request.transcript(), history, systemPrompt);
+            } catch (com.aigf.gf_plz.global.groq.exception.GroqApiException e) {
+                logger.error("Groq API 호출 실패 - SessionId: {}, CharacterId: {}, Error: {}", 
+                        session.getSessionId(), request.characterId(), e.getMessage(), e);
+                // 상태 코드에 따라 다른 사용자 메시지 반환
+                reply = getUserFriendlyErrorMessage(e.getMessage());
             } catch (Exception e) {
-                logger.error("Groq API 호출 실패 - SessionId: {}, CharacterId: {}", 
+                logger.error("Groq API 호출 중 예상치 못한 오류 - SessionId: {}, CharacterId: {}", 
                         session.getSessionId(), request.characterId(), e);
-                // 사용자 메시지는 이미 저장되었으므로 기본 응답 반환
                 reply = "죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
             }
 
@@ -186,10 +190,14 @@ public class CallServiceImpl implements CallService {
             String reply;
             try {
                 reply = groqClient.generateReply("call", transcript, history, systemPrompt);
+            } catch (com.aigf.gf_plz.global.groq.exception.GroqApiException e) {
+                logger.error("Groq API 호출 실패 - SessionId: {}, CharacterId: {}, Error: {}", 
+                        session.getSessionId(), request.characterId(), e.getMessage(), e);
+                // 상태 코드에 따라 다른 사용자 메시지 반환
+                reply = getUserFriendlyErrorMessage(e.getMessage());
             } catch (Exception e) {
-                logger.error("Groq API 호출 실패 - SessionId: {}, CharacterId: {}", 
+                logger.error("Groq API 호출 중 예상치 못한 오류 - SessionId: {}, CharacterId: {}", 
                         session.getSessionId(), request.characterId(), e);
-                // 사용자 메시지는 이미 저장되었으므로 기본 응답 반환
                 reply = "죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
             }
 
@@ -362,6 +370,28 @@ public class CallServiceImpl implements CallService {
                     return new GroqMessage(role, msg.getTextContent());
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Groq API 에러 메시지에서 상태 코드를 추출하여 사용자 친화적인 메시지를 반환합니다.
+     */
+    private String getUserFriendlyErrorMessage(String errorMessage) {
+        if (errorMessage == null) {
+            return "죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        }
+
+        if (errorMessage.contains("(401)")) {
+            return "죄송합니다. 서비스 설정에 문제가 있어 대화를 이어갈 수 없습니다. 관리자에게 문의해주세요.";
+        } else if (errorMessage.contains("(429)")) {
+            return "죄송합니다. 현재 요청이 너무 많아 잠시 대기 중입니다. 잠시 후 다시 시도해주세요.";
+        } else if (errorMessage.contains("(500)") || errorMessage.contains("(502)") 
+                || errorMessage.contains("(503)") || errorMessage.contains("(504)")) {
+            return "죄송합니다. AI 서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        } else if (errorMessage.contains("(400)")) {
+            return "죄송합니다. 요청 처리 중 오류가 발생했습니다. 다시 시도해주세요.";
+        } else {
+            return "죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        }
     }
 }
 
