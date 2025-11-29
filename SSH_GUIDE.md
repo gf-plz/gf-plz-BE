@@ -259,3 +259,4 @@ cd /home/ubuntu && pkill -f "gf-plz" && nohup java -jar -Dspring.profiles.active
 
 
 
+
