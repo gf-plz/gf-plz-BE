@@ -18,9 +18,11 @@ import java.time.LocalDateTime;
 public class ThreeDaysRelationServiceImpl implements ThreeDaysRelationService {
 
     private final CharacterRepository characterRepository;
+    private final AiReviewService aiReviewService;
 
-    public ThreeDaysRelationServiceImpl(CharacterRepository characterRepository) {
+    public ThreeDaysRelationServiceImpl(CharacterRepository characterRepository, AiReviewService aiReviewService) {
         this.characterRepository = characterRepository;
+        this.aiReviewService = aiReviewService;
     }
 
     @Override
@@ -31,6 +33,10 @@ public class ThreeDaysRelationServiceImpl implements ThreeDaysRelationService {
 
         character.updateRelation(Relation.ex);
         character.updateEndDay(LocalDateTime.now());
+        String aiSummary = aiReviewService.generateReview(character);
+        if (aiSummary != null) {
+            character.updateAiSummary(aiSummary);
+        }
         characterRepository.save(character);
 
         return new ThreeDaysRelationResponseDto(

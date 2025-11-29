@@ -66,6 +66,9 @@ public class Character {
     @Column(name = "테토력", nullable = false)
     private Integer teto; // 0~100
 
+    @Column(name = "한줄평", columnDefinition = "TEXT")
+    private String aiSummary;
+
     @Builder
     public Character(
             Relation relation,
@@ -80,6 +83,8 @@ public class Character {
             String name,
             AttachmentType attachment,
             Integer teto
+            ,
+            String aiSummary
     ) {
         this.relation = relation != null ? relation : Relation.yet;
         this.startDay = startDay;
@@ -93,6 +98,7 @@ public class Character {
         this.name = name;
         this.attachment = attachment;
         this.teto = teto;
+        this.aiSummary = aiSummary;
     }
 
     // --- Status Update Methods ---
@@ -102,6 +108,10 @@ public class Character {
      */
     public void updateLike(Integer newLike) {
         this.like = newLike;
+    }
+
+    public void updateAiSummary(String aiSummary) {
+        this.aiSummary = aiSummary;
     }
 
     /**

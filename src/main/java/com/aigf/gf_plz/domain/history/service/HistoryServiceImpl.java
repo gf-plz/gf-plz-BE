@@ -51,6 +51,8 @@ public class HistoryServiceImpl implements HistoryService {
                 character.getImageUrl(),
                 character.getVoiceType(),
                 statusDto
+                ,
+                character.getAiSummary()
         );
     }
 }
