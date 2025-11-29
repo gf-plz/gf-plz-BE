@@ -3,6 +3,7 @@ package com.aigf.gf_plz.domain.character.controller;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
+import com.aigf.gf_plz.domain.character.dto.SessionIdResponseDto;
 import com.aigf.gf_plz.domain.character.entity.Gender;
 import com.aigf.gf_plz.domain.character.entity.Relation;
 import com.aigf.gf_plz.domain.character.service.CharacterService;
@@ -94,5 +95,16 @@ public class CharacterController {
     @PostMapping(value = "/{characterId}/extend", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
     public CharacterResponseDto extendRelationship(@PathVariable Long characterId) {
         return characterService.extendRelationship(characterId);
+    }
+
+    /**
+     * 캐릭터의 가장 최근 세션 ID를 조회합니다.
+     *
+     * @param characterId 캐릭터 ID
+     * @return 세션 ID 응답 (세션이 없으면 null)
+     */
+    @GetMapping(value = "/{characterId}/session", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public SessionIdResponseDto getRecentSessionId(@PathVariable Long characterId) {
+        return characterService.getRecentSessionId(characterId);
     }
 }

@@ -3,6 +3,7 @@ package com.aigf.gf_plz.domain.character.service;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
+import com.aigf.gf_plz.domain.character.dto.SessionIdResponseDto;
 import com.aigf.gf_plz.domain.character.dto.StatusResponseDto;
 import com.aigf.gf_plz.domain.character.entity.Character;
 import com.aigf.gf_plz.domain.character.entity.Gender;
@@ -233,5 +234,27 @@ public class CharacterServiceImpl implements CharacterService {
         return characters.stream()
                 .map(this::toResponseDto)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SessionIdResponseDto getRecentSessionId(Long characterId) {
+        // 캐릭터 존재 여부 확인
+        if (!characterRepository.existsById(characterId)) {
+            throw new CharacterNotFoundException(characterId);
+        }
+        
+        // 캐릭터의 가장 최근 세션 조회 (세션 타입 무관, 비활성 포함)
+        List<Session> sessions = sessionRepository
+                .findByCharacterIdOrderByLastMessageAtDesc(characterId);
+        
+        if (sessions.isEmpty()) {
+            // 세션이 없으면 null 반환
+            return null;
+        }
+        
+        // 가장 최근 세션 반환
+        Session mostRecentSession = sessions.get(0);
+        return new SessionIdResponseDto(characterId, mostRecentSession.getSessionId());
     }
 }

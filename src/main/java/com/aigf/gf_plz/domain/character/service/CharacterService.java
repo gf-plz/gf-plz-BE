@@ -60,4 +60,12 @@ public interface CharacterService {
      * @return 캐릭터 목록
      */
     List<CharacterResponseDto> getCharacters(Relation relation, Gender gender);
+    
+    /**
+     * 캐릭터의 가장 최근 세션 ID를 조회합니다.
+     * 
+     * @param characterId 캐릭터 ID
+     * @return 세션 ID 응답 (세션이 없으면 null)
+     */
+    com.aigf.gf_plz.domain.character.dto.SessionIdResponseDto getRecentSessionId(Long characterId);
 }
