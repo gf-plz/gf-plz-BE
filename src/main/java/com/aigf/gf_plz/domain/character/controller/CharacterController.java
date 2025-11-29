@@ -1,5 +1,6 @@
 package com.aigf.gf_plz.domain.character.controller;
 
+import com.aigf.gf_plz.domain.character.dto.AffectionResetResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
@@ -117,5 +118,15 @@ public class CharacterController {
     @PostMapping(value = "/{characterId}/fast-forward-end-day", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
     public CharacterResponseDto fastForwardEndDay(@PathVariable Long characterId) {
         return characterService.fastForwardEndDay(characterId);
+    }
+
+    /**
+     * 모든 캐릭터의 애정도를 50으로 설정합니다.
+     *
+     * @return 애정도 초기화 결과
+     */
+    @PostMapping(value = "/reset-affection", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
+    public AffectionResetResponseDto resetAllAffectionTo50() {
+        return characterService.resetAllAffectionTo50();
     }
 }

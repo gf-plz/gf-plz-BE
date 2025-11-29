@@ -1,8 +1,10 @@
 package com.aigf.gf_plz.domain.character.service;
 
+import com.aigf.gf_plz.domain.character.dto.AffectionResetResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
+import com.aigf.gf_plz.domain.character.dto.SessionIdResponseDto;
 import com.aigf.gf_plz.domain.character.entity.Gender;
 import com.aigf.gf_plz.domain.character.entity.Relation;
 
@@ -67,7 +69,7 @@ public interface CharacterService {
      * @param characterId 캐릭터 ID
      * @return 세션 ID 응답 (세션이 없으면 null)
      */
-    com.aigf.gf_plz.domain.character.dto.SessionIdResponseDto getRecentSessionId(Long characterId);
+    SessionIdResponseDto getRecentSessionId(Long characterId);
     
     /**
      * 테스트용: 헤어지는 날짜를 현재 시간으로 당깁니다.
@@ -76,4 +78,11 @@ public interface CharacterService {
      * @return 업데이트된 캐릭터 정보
      */
     CharacterResponseDto fastForwardEndDay(Long characterId);
+    
+    /**
+     * 모든 캐릭터의 애정도를 50으로 설정합니다.
+     * 
+     * @return 애정도 초기화 결과 (업데이트된 캐릭터 수)
+     */
+    AffectionResetResponseDto resetAllAffectionTo50();
 }

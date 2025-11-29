@@ -1,5 +1,6 @@
 package com.aigf.gf_plz.domain.character.service;
 
+import com.aigf.gf_plz.domain.character.dto.AffectionResetResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterCreateRequestDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterResponseDto;
 import com.aigf.gf_plz.domain.character.dto.CharacterSelectResponseDto;
@@ -275,5 +276,25 @@ public class CharacterServiceImpl implements CharacterService {
         
         // 3. 응답 DTO 생성
         return toResponseDto(character);
+    }
+
+    @Override
+    @Transactional
+    public AffectionResetResponseDto resetAllAffectionTo50() {
+        // 1. 모든 캐릭터 조회
+        List<Character> allCharacters = characterRepository.findAll();
+        
+        // 2. 모든 캐릭터의 애정도를 50으로 설정
+        int updatedCount = 0;
+        for (Character character : allCharacters) {
+            character.updateLike(50);
+            characterRepository.save(character);
+            updatedCount++;
+        }
+        
+        logger.info("모든 캐릭터의 애정도를 50으로 설정 완료 - 업데이트된 캐릭터 수: {}", updatedCount);
+        
+        // 3. 응답 DTO 생성
+        return new AffectionResetResponseDto(updatedCount);
     }
 }

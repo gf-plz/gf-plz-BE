@@ -33,10 +33,19 @@ public class ThreeDaysRelationServiceImpl implements ThreeDaysRelationService {
 
         character.updateRelation(Relation.ex);
         character.updateEndDay(LocalDateTime.now());
+        
+        // 한줄평 생성
         String aiSummary = aiReviewService.generateReview(character);
         if (aiSummary != null) {
             character.updateAiSummary(aiSummary);
         }
+        
+        // 애정도 평가 및 업데이트
+        Integer affectionScore = aiReviewService.evaluateAffection(character);
+        if (affectionScore != null) {
+            character.updateLike(affectionScore);
+        }
+        
         characterRepository.save(character);
 
         return new ThreeDaysRelationResponseDto(
