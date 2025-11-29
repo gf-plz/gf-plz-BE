@@ -152,12 +152,7 @@ public class CharacterServiceImpl implements CharacterService {
      */
     @Transactional
     private void checkAndUpdateExpiredStatus(Character character) {
-        if (character.getEndDay() != null && 
-            character.getEndDay().isBefore(LocalDateTime.now()) && 
-            character.getRelation() == Relation.now) {
-            character.updateRelation(Relation.ex);
-            characterRepository.save(character);
-        }
+        // 자동 Expiration 해제: 기존 경과 이후 자동 변경 동작을 제거합니다.
     }
 
     @Override
@@ -180,8 +175,8 @@ public class CharacterServiceImpl implements CharacterService {
             throw new IllegalStateException("헤어지는 날짜가 설정되지 않아 연장할 수 없습니다.");
         }
         
-        // 5. 헤어지는 날짜를 3일 연장
-        LocalDateTime newEndDay = character.getEndDay().plusDays(3);
+        // 5. 헤어지는 날짜를 현재 시점 기준으로 3일 연장
+        LocalDateTime newEndDay = LocalDateTime.now().plusDays(3);
         character.updateEndDay(newEndDay);
         characterRepository.save(character);
         
