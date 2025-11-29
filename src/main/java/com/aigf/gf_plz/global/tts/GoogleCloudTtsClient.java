@@ -401,12 +401,11 @@ public class GoogleCloudTtsClient implements TtsClient {
      * - ko-KR-Standard-A (여성, 표준, 무료)
      * - ko-KR-Standard-C (여성, 표준, 무료)
      * - ko-KR-Wavenet-A (여성, 고품질, 무료 티어 제공)
-     * - ko-KR-Wavenet-C (여성, 고품질, 무료 티어 제공)
      * 
      * 남성 목소리:
      * - ko-KR-Standard-B (남성, 표준, 무료)
-     * - ko-KR-Standard-D (남성, 표준, 무료)
      * - ko-KR-Wavenet-B (남성, 고품질, 무료 티어 제공)
+     * - ko-KR-Wavenet-C (남성, 고품질, 무료 티어 제공)
      * - ko-KR-Wavenet-D (남성, 고품질, 무료 티어 제공)
      * 
      * AudioConfig의 파라미터(speakingRate, pitch 등)를 조절하여 더 자연스럽게 만들 수 있습니다.
@@ -416,7 +415,7 @@ public class GoogleCloudTtsClient implements TtsClient {
         return switch (voiceType != null ? voiceType.toUpperCase() : "") {
             // 여성 목소리
             case "TYPE1" -> "ko-KR-Wavenet-A";  // 부드러운 여성 목소리 (고품질, 무료 티어)
-            case "TYPE2" -> "ko-KR-Wavenet-C";  // 밝은 여성 목소리 (고품질, 무료 티어)
+            case "TYPE2" -> "ko-KR-Standard-C"; // 밝은 여성 목소리 (무료)
             case "TYPE3" -> "ko-KR-Standard-A"; // 표준 여성 목소리 (무료)
             // 남성 목소리
             case "TYPE4" -> "ko-KR-Wavenet-B";  // 부드러운 남성 목소리 (고품질, 무료 티어)
