@@ -117,11 +117,11 @@ jobs:
       # EC2 서버로 JAR 및 환경변수 파일 전송
       - name: Copy JAR and env files to EC2
         run: |
-          scp -o StrictHostKeyChecking=no build/libs/gf-plz-0.0.1-SNAPSHOT.jar ubuntu@3.27.10.133:/home/ubuntu/
-          scp -o StrictHostKeyChecking=no .env ubuntu@3.27.10.133:/home/ubuntu/
-          scp -o StrictHostKeyChecking=no google-credentials.json ubuntu@3.27.10.133:/home/ubuntu/
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no build/libs/gf-plz-0.0.1-SNAPSHOT.jar ubuntu@3.27.10.133:/home/ubuntu/
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no .env ubuntu@3.27.10.133:/home/ubuntu/
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no google-credentials.json ubuntu@3.27.10.133:/home/ubuntu/
           # 서버에서 파일 검증
-          ssh -o StrictHostKeyChecking=no ubuntu@3.27.10.133 << 'VERIFY_EOF'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@3.27.10.133 << 'VERIFY_EOF'
             echo "서버에서 google-credentials.json 파일 검증 중..."
             if [ ! -f /home/ubuntu/google-credentials.json ]; then
               echo "ERROR: 파일이 서버에 존재하지 않습니다"
@@ -152,7 +152,7 @@ jobs:
       # EC2 서버에서 기존 Spring Boot 종료 + 새 Jar 실행
       - name: Deploy on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@3.27.10.133 << 'EOF'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@3.27.10.133 << 'EOF'
             # 기존 프로세스 종료
             PID=$(pgrep -f "gf-plz-0.0.1-SNAPSHOT.jar")
             if [ -n "$PID" ]; then
